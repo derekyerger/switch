@@ -1,0 +1,37 @@
+#!/bin/bash
+# Individual client receiver. Spawned by socat in the server script.
+
+echo "$(date) New connection from $SOCAT_PEERADDR:$SOCAT_PEERPORT" | logger -t adNodes
+read identity
+identity=${identity:0:21}
+
+# Test and throw out clients not matching our expected format
+# Example: v1.0-r6K2ywLeEBEf7bvi
+
+[[ "${identity//\n}" =~ ^v[0-9].[0-9]-([a-zA-Z0-9]){16}$ ]] && {
+	echo "$(date) Connection $SOCAT_PEERADDR:$SOCAT_PEERPORT identifies as $identity" | logger -t adNodes
+} || {  
+	echo "$(date) Connection $SOCAT_PEERADDR:$SOCAT_PEERPORT failed to identify: $identity" | logger -t adNodes
+	exit
+}
+
+# If the other end didn't cleanly exit, terminate the receiver associated with the id.
+existing=`lsof|grep "$identity"|awk '{print $2}'`
+[ -n "$existing" ] && {
+	kill $existing
+	echo "$(date) Terminated existing identity $identity" | logger -t adNodes
+}
+identity=${identity:0:21}
+
+# Patch an rx UNIX datagram socket to standard output, for collecting one or more receive
+# streams to forward to the node
+socat -u UNIX-RECV:$identity.tx STDOUT &
+spid=$!
+
+# Dump all data received from the client into a file
+stdbuf -i0 -o0 cat > $identity.rx
+
+# If we're at this point, EOF has been received and the connection is terminated
+kill $spid
+echo "$(date) Connection $SOCAT_PEERADDR:$SOCAT_PEERPORT terminated" | logger -t adNodes
+rm $identity.[rt]x

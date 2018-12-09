@@ -1,0 +1,26 @@
+#!/bin/bash
+# Respawn listener in an infinite loop. The listener (socat) listens on
+# port 8900 for incoming plaintext TCP connections, and on an incoming
+# connection forks a receiver process.
+
+# To wrap TLS around this, use the following nginx configuration. It
+# belongs in /etc/nginx/nginx.conf in its own sexction, NOT in a
+# site configuration:
+
+#stream {
+#        error_log /var/log/nginx/error-api.log;
+#
+#        upstream local {
+#                server 127.0.0.1:8900;
+#        }
+#        server {
+#                listen 8943 ssl;
+#                include snippets/ssl-altdevs.net.conf;
+#                proxy_pass local;
+#
+#                ssl_protocols TLSv1.1 TLSv1.2;
+#                ssl_prefer_server_ciphers on;
+#        }
+#}
+
+while ! socat tcp-l:8900,fork system:./receiver; do sleep 1; done

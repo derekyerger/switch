@@ -1,0 +1,1 @@
+while true; do scp -r . root@172.31.11.1:/www/wsserver/; sleep 10; inotifywait -r -e CREATE .; done
