@@ -1,0 +1,8 @@
+#!/bin/bash
+[ -z "$1" ] && exit
+while read i; do
+	j=${i: -3}
+	l="$l -e s#$i#${j#.}/$(basename $i)#"
+	[ ! -z $2 ] && cp $(dirname $1)/$i ${j#.}/$(basename $i)
+done < <(grep assets "$1"|cut -d\" -f2)
+sed $l "$1"

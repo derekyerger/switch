@@ -1,0 +1,70 @@
+.progress-overlay {
+	position: fixed;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	Left: 0;
+	z-index: 101;
+	background: #000;
+	opacity: .6;
+	filter: Alpha(Opacity=60);
+}
+.progress-overlay span {
+	position: fixed;
+	margin: auto;
+	top: 0;
+	left: 0;
+	bottom: 0;
+	right: 0;
+	font-size: 8em;
+}
+.box {
+	position:absolute;
+	background-color:transparent;
+}
+.hcipos {
+	width:33%;
+	float:left;
+	text-align:center;
+}
+.hcio {
+	position:absolute;
+	top:0;
+	width:33%;
+	height:100%;
+	background-color:transparent;
+}
+
+.dot {
+	position: absolute;
+	top: 50%;
+	width: 0.2em;
+	height: 0.2em;
+	background-color: #97f4ff;
+	box-shadow: 0 0 .2em .13em #52a8e8, 0 0 0 0 transparent, 0 0 0 0 #298df4;
+	opacity: 0;
+	animation: dot-anim linear 800ms 0ms;
+	border-radius: 50%;
+}
+
+.dot1 { left: 90% }
+.dot2 { left: 10% }
+.dot3 { left: 50% }
+
+@keyframes dot-anim {
+	0% {
+		opacity: 1;
+	}
+	6% {
+		box-shadow: 0 0 .2em .13em #52a8e8, 0 0 0 0 transparent, 0 0 5px 10px #298df4;
+	}
+	51% {
+		opacity: 0;
+		box-shadow: 0 0 .2em .13em #52a8e8, 0 0 0 120px transparent, 0 0 0 120px #298df4;
+	}
+}
+
+.tico {
+	width: 1.5rem;
+	vertical-align: bottom;
+}

@@ -1,0 +1,31 @@
+			$test = [ 'Home' => [ 'target' => 'abc',
+					'icon' => 'fa fa-th-large'],
+				'Menu level' => [ 'icon' => 'fa fa-align-left',
+					'children' ->
+			function nav($items) {
+				if ($items['children']) foreach ($items['children']	 as $i) nav($i);
+				<ul class="nav">
+					<li class="nav-header">Navigation</li>
+					<li class="active">
+						<a href="index.html">
+							<i class="fa fa-th-large"></i>
+							<span>Home</span>
+						</a>
+					</li>
+					<li class="has-sub">
+						<a href="javascript:;">
+							<b class="caret"></b>
+							<i class="fa fa-align-left"></i> 
+							<span>Menu Level</span>
+						</a>
+						<ul class="sub-menu">
+							<li class="has-sub">
+								<a href="javascript:;">
+									<b class="caret"></b>
+									Menu 1.1
+								</a>
+								<ul class="sub-menu">
+									<li class="has-sub">
+										<a href="javascript:;">
+											<b class="caret"></b>
+

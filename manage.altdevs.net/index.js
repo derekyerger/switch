@@ -124,7 +124,7 @@ function delBond() {
 	$("#delBond").attr("data-original-title", "Bond successfully cleared").tooltip("show");
 }
 
-function doAjax(cmd, data) {
+function retr(cmd, data) {
 	clearTimeout(spinHandle);
 	spinHandle = setTimeout(spinnerStart, 150); /* Only start spinner if we're taking too long */
 	var txObj = { f: cmd, d: data };
@@ -160,8 +160,7 @@ function doAjax(cmd, data) {
 			} else if (cmd == "page") {
 
 				unping();
-				$("#viewport").html(rxObj);
-				popPage(data);
+				eval(rxObj);
 
 			} else if (cmd == "commit") {
 
