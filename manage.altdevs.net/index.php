@@ -37,16 +37,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 			}
 			break;
 
-		case "set":
-			$comm->txrxCmd(7, $_POST['d'] . "\n", 10000);
-			break;
-
 		case "page":
 			$f = strtolower(preg_replace("/ /", "", $_POST['d']));
 			if (!file_exists("views/$f.php")) {
 				break;
-			} else echo "$('#content').html('" . preg_replace(["/\n/", "/'/"], ["\\n", "\'"], fetch("views/$f.php")) . "');" .
-				"$('.nav li').removeClass('active');$('.nav li span:contains(\"" . $_POST['d'] . "\")').parents('li').addClass('active')";
+			} else {
+				ob_start();
+				require("views/$f.php");
+				echo "$('#content').html('" . preg_replace(["/\n/", "/'/"], ["\\n", "\'"], ob_get_clean()) . "');" .
+				"$('.nav li').removeClass('active');$('.nav li span:contains(\"" . $_POST['d'] . "\")').parents('li').addClass('active');" .
+				Js::append();
+			}
 			break;
 
 		case "poll":

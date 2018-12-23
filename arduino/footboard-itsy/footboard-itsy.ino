@@ -12,28 +12,36 @@
 
 void (*resetFunc) (void) = 0;
 
-const int MAGIC = 6; /* To detect if flash has been initialized */
+const int MAGIC = 12; /* To detect if flash has been initialized */
 const int STRBUF = 512;  /* Buffer size for programming string */
-const int MENUFIXED = 4; /* Where to start counting tunable entries */
 const int SAMP = 50;    /* For array allocation */
 const int MAXSENS = 2;   /* For uarray allocation */
 
-/*const char *tunablesDesc[] = { "Sensor count [1 to 2]",
-                               "Hard press default",
-                               "Soft press default",
-                               "Long press (ms)",
-                               "Sample interval (ms)",
-                               "Settle time (samples)",
-                               "Debounce time (ms)",
-                               "Sample averaging window [1 to 50]",
-                               "Pressure bias",
-                               "Minimum group",
-                               "Enable adjust",
-                               "Bluetooth",
-                               "Turn off WiFi at battery level"
-                             };*/
+typedef struct {
+  char *name;
+  int min;
+  int max;
+  char *desc;
+} TINFO;
 
-int tunables[] = { 1, 145, 125, 400, 2, 50, 100, 50, 20, 15, 0, 0, 100 };
+const TINFO TDESC[] = {
+  { "Sensor count", 1, 2, "The number of sensors the device will read from" },
+  { "Hard press", 0, 255, "The pressure required to trigger a hard press" },
+  { "Soft press", 0, 255, "The pressure required to trigger a soft press" },
+  { "Long press", 1, 10000, "The contact time (in milliseconds) required to trigger a long press" },
+  { "Sample interval", 1, 9, "The time (in milliseconds) between each sample" },
+  { "Settle time", 1, 255, "The number of samples to continue reading before making a verdict" },
+  { "Debounce time", 0, 10000, "How long to wait (in milliseconds) after performing an action, before resuming sensing" },
+  { "Sample averaging window", 1, SAMP, "The number of past samples to include in the averaging function" },
+  { "Pressure bias", 10, 100, "During auto-calibration, keep soft and hard presses separated by this delta" },
+  { "Minimum group", 5, 50, "Minimum number of hard or soft presses required to auto-calibrate" },
+  { "Enable adjust", 0, 1, "Enable auto-calibration" },
+  { "Bluetooth", 0, 1, "Enable or disable bluetooth" },
+  { "Turn off WiFi at battery level", 0, 100, "What battery level is required for WiFi management" }
+};
+
+
+int tunables[] = { 2, 145, 125, 400, 2, 50, 100, 50, 20, 15, 0, 0, 100 };
 
 /* Array mapped to legible pointer names */
 int *numSensors = &tunables[0];
@@ -160,8 +168,9 @@ void setup() {
   digitalWrite(5, HIGH);
   digitalWrite(6, HIGH);
   digitalWrite(12, HIGH);
-  digitalWrite(22, HIGH);
-  Serial1.begin(115200); /* Side channel control */
+  digitalWrite(22, LOW); /* Any RPi will stay off */
+
+  Serial.begin(9600); /* Side channel control */
   adx = 0;
   val = (EEPROM.read(adx) << 8) + EEPROM.read(adx + 1);
   byte resetCt = 0;
@@ -187,7 +196,7 @@ void setup() {
     while ((pString[sp++] = EEPROM.read(adx++)) != 0);
   }
 
-  Serial1.setTimeout(60000);
+  Serial.setTimeout(60000);
   for (byte p = 0; p < CLLMAX - 1; p++) cLL[p].next = &cLL[p + 1];
   lastIf = !*toBLE;
   setupIface(1);
@@ -199,15 +208,15 @@ void loop() {
     readImpulse = 0;
     if (sensorMask) {
       char* p = fetchImpulse(sensorMask, impulse);
-      Serial1.print('>');
-      Serial1.print(sensorMask);
-      Serial1.print(impulse);
+      Serial.print('>');
+      Serial.print(sensorMask);
+      Serial.print(impulse);
       char* q = p;
       do {
         if (*q == '\\') q++;
-        Serial1.print(*q);
+        Serial.print(*q);
       } while (*(++q) != ';');
-      Serial1.print("\n");
+      Serial.print("\n");
       for (int s = 0; s < *numSensors; s++) clearS(s);
 
       if (captureS1) {
@@ -251,7 +260,7 @@ void loop() {
     } else if (lastImpulse[s] != 0) { /* During event, sample */
       impulseBuffer[s][impulseP[s]] = v;
       impulseP[s] = (impulseP[s] + 1) % *avgWin;
-    } else if (analogRead(A5) < 650) {
+    } else if (false) {
       if (millis() - powerSavingTime > 600000 ) {
         if (!powerSaving) setupLowPower();
         powerSaving = true;
@@ -265,22 +274,22 @@ void loop() {
   }
   delay(*sampleDelay);
 skip:
-  if (Serial1.available() > 0) { /* Side channel command */
-    val = Serial1.read();
+  if (Serial.available() > 0) { /* Side channel command */
+    val = Serial.read();
     switch (val) {
       case 1: /* Read state */
         delay(100);
         int sp;
         for (sp = 0; sp < (sizeof(tunables) / sizeof(int)); sp++) {
-          Serial1.print(tunables[sp]);
-          Serial1.print(",");
+          Serial.print(tunables[sp]);
+          Serial.print(",");
         }
-        Serial1.print(pString);
-        Serial1.print("\n");
+        Serial.print(pString);
+        Serial.print("\n");
         break;
 
       case 3: /* Temporary program */
-        Serial1.readStringUntil('\n').toCharArray(pString, STRBUF);
+        Serial.readStringUntil('\n').toCharArray(pString, STRBUF);
         break;
 
       case 4: /* Save to memory */
@@ -296,26 +305,26 @@ skip:
         break;
 
       case 7: /* Set tunable */
-        sp = Serial1.readStringUntil(',').toInt();
-        tunables[sp] = Serial1.readStringUntil('\n').toInt();
+        sp = Serial.readStringUntil(',').toInt();
+        tunables[sp] = Serial.readStringUntil('\n').toInt();
         if (&tunables[sp] == toBLE) setupIface();
-        Serial1.print("\n");
+        Serial.print("\n");
         break;
 
       case 8: /* Get battery */
-        Serial1.print(batlvl);
-        Serial1.print("%");
-        if (analogRead(A5) > 650) Serial1.print(", charging");
-        Serial1.print("\n");
+        Serial.print(batlvl);
+        Serial.print("%");
+        if (analogRead(A5) > 650) Serial.print(", charging");
+        Serial.print("\n");
         break;
 
       case 9: /* Get power source */
-        Serial1.print(analogRead(A5));
-        Serial1.print("\n");
+        Serial.print(analogRead(A5));
+        Serial.print("\n");
         break;
 
       case 11: /* Set debugging */
-        debugging = (byte) Serial1.readStringUntil('\n').toInt();
+        debugging = (byte) Serial.readStringUntil('\n').toInt();
         break;
 
       case 12: /* Reset */
@@ -323,16 +332,33 @@ skip:
         break;
 
       case 14: /* Get sensors */
-        Serial1.print(analogRead(A0));
-        Serial1.print(",");
-        Serial1.print(analogRead(A1));
-        Serial1.print("\n");
+        Serial.print(analogRead(A0));
+        Serial.print(",");
+        Serial.print(analogRead(A1));
+        Serial.print("\n");
         break;
       
       case 15: /* Delete bonding info */
         //ble.sendCommandCheckOK("AT+GAPDELBONDS");
         break;
 
+      case 16: /* Grab device info table */
+        sp = sizeof(TDESC) / sizeof(TINFO);
+        for (int i = 0; i < sp; i++) {
+            TINFO j = TDESC[i];
+            Serial.print(j.name);
+            Serial.print(",");
+            Serial.print(tunables[i]);
+            Serial.print(",");
+            Serial.print(j.min);
+            Serial.print(",");
+            Serial.print(j.max);
+            Serial.print(",");
+            Serial.print(j.desc);
+            Serial.print(";");
+        }
+        Serial.print("\n");
+        break;
     }
   }
 
@@ -355,8 +381,6 @@ skip:
     }
   }
 
-  digitalWrite(22, (analogRead(A5) >= 650)
-               || (batlvl > *rpiCutoff) ); /* RPi on if USB powered and battery above preset */
 }
 
 /* ===== Averaging, calibration ===== */
@@ -384,7 +408,7 @@ void insertLL(byte val) {
   /* Delete old node */
   if (debugging) {
     sprintf(db, "c%d,%d,%d,", cLL[cLLptr].val, val, cLLptr);
-    Serial1.print(db);
+    Serial.print(db);
   }
   if (&cLL[cLLptr] == cLLfirst) {
     /* Item to remove is first item */
@@ -437,8 +461,8 @@ void insertLL(byte val) {
   }
   cLLptr = (cLLptr + 1) % CLLMAX;
   if (debugging) {
-    Serial1.print(fl);
-    Serial1.print(";");
+    Serial.print(fl);
+    Serial.print(";");
   }
 }
 
@@ -451,36 +475,36 @@ void updateCalibration() {
   byte divisor;
 
   if (*softP <= cLLfirst->val) {
-    if (debugging) Serial1.print("ss");
+    if (debugging) Serial.print("ss");
     gCt[0].first = cLLfirst;
     inc = &gCt[0].count;
   }
   for (calibrLL* p = cLLfirst; p != NULL; p = p->next) {
     if (debugging && p->val > 0) {
-      if (p->val < 16) Serial1.print("0");
-      Serial1.print(p->val, HEX);
+      if (p->val < 16) Serial.print("0");
+      Serial.print(p->val, HEX);
     }
     if (p->next != NULL) {
       if (*softP > p->val && *softP <= p->next->val) {
-        if (debugging) Serial1.print("ss");
+        if (debugging) Serial.print("ss");
         gCt[0].first = p;
         inc = &gCt[0].count;
       }
       if (*hardP > p->val && *hardP <= p->next->val) {
-        if (debugging) Serial1.print("hh");
+        if (debugging) Serial.print("hh");
         gCt[1].first = p;
         inc = &gCt[1].count;
       }
-    } else if (debugging && *hardP > p->val) if (debugging) Serial1.print("hh");
+    } else if (debugging && *hardP > p->val) if (debugging) Serial.print("hh");
     (*inc)++;
   }
 
   /* Medians */
-  if (debugging) Serial1.print(";");
+  if (debugging) Serial.print(";");
   for (v = 0; v < 2; v++) {
     if (debugging) {
-      Serial1.print(gCt[v].count);
-      Serial1.print(",");
+      Serial.print(gCt[v].count);
+      Serial.print(",");
     }
     calibrLL* p = cLLfirst;
     if (gCt[v].count > *minGrp) {
@@ -488,12 +512,12 @@ void updateCalibration() {
       for (x = 0; x < (gCt[v].count / 2); x++) p = p->next;
       gCt[v].median = p->val;
       if (debugging) {
-        Serial1.print(gCt[v].median);
-        Serial1.print(",");
+        Serial.print(gCt[v].median);
+        Serial.print(",");
       }
-    } else if (debugging) Serial1.print(",");
+    } else if (debugging) Serial.print(",");
   }
-  if (debugging) Serial1.print(";");
+  if (debugging) Serial.print(";");
 
   if (*enAdj && gCt[0].count > *minGrp && gCt[1].count > *minGrp) {
     byte dta = (gCt[1].median - gCt[0].median) / 2;
@@ -503,10 +527,10 @@ void updateCalibration() {
       *softP = *hardP - *biasP;
     if (debugging) {
       sprintf(db, "%d,%d", *softP, *hardP);
-      Serial1.print(db);
+      Serial.print(db);
     }
   }
-  if (debugging) Serial1.print("\n");
+  if (debugging) Serial.print("\n");
 }
 
 /* ===== User Programming and Translation ===== */
