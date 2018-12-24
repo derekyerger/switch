@@ -5,10 +5,7 @@
 #include <Arduino.h>
 #include <SPI.h>
 #include <LowPower.h>
-
-#if SOFTWARE_SERIAL_AVAILABLE
-#include <SoftwareSerial.h>
-#endif
+#include <avr/pgmspace.h>
 
 void (*resetFunc) (void) = 0;
 
@@ -17,29 +14,7 @@ const int STRBUF = 512;  /* Buffer size for programming string */
 const int SAMP = 50;    /* For array allocation */
 const int MAXSENS = 2;   /* For uarray allocation */
 
-typedef struct {
-  char *name;
-  int min;
-  int max;
-  char *desc;
-} TINFO;
-
-const TINFO TDESC[] = {
-  { "Sensor count", 1, 2, "The number of sensors the device will read from" },
-  { "Hard press", 0, 255, "The pressure required to trigger a hard press" },
-  { "Soft press", 0, 255, "The pressure required to trigger a soft press" },
-  { "Long press", 1, 10000, "The contact time (in milliseconds) required to trigger a long press" },
-  { "Sample interval", 1, 9, "The time (in milliseconds) between each sample" },
-  { "Settle time", 1, 255, "The number of samples to continue reading before making a verdict" },
-  { "Debounce time", 0, 10000, "How long to wait (in milliseconds) after performing an action, before resuming sensing" },
-  { "Sample averaging window", 1, SAMP, "The number of past samples to include in the averaging function" },
-  { "Pressure bias", 10, 100, "During auto-calibration, keep soft and hard presses separated by this delta" },
-  { "Minimum group", 5, 50, "Minimum number of hard or soft presses required to auto-calibrate" },
-  { "Enable adjust", 0, 1, "Enable auto-calibration" },
-  { "Bluetooth", 0, 1, "Enable or disable bluetooth" },
-  { "Turn off WiFi at battery level", 0, 100, "What battery level is required for WiFi management" }
-};
-
+#include "device.h"
 
 int tunables[] = { 2, 145, 125, 400, 2, 50, 100, 50, 20, 15, 0, 0, 100 };
 
@@ -73,7 +48,7 @@ long powerSavingTime = 0;
 
 int adx = 0;
 boolean debug;
-int impulse;
+byte impulse;
 byte sensorMask;
 byte readImpulse;
 boolean captureS1 = false;
@@ -99,7 +74,7 @@ struct clist {
 };
 
 /* Array buffers for averaging and time tracking */
-unsigned long lastImpulse[6];
+unsigned long lastImpulse[MAXSENS];
 byte impulseBuffer[MAXSENS][SAMP];
 byte impulseP[MAXSENS];
 
@@ -111,6 +86,7 @@ char* fetchImpulse(byte sensor, byte impulse);
 void parseCmd(char* hidSequence);
 void clearS(byte sensor);
 byte avgS(byte sensor);
+void dumpCapabilities();
 
 /* ===== Main setup, loop, supporting functions ===== */
 
@@ -343,21 +319,7 @@ skip:
         break;
 
       case 16: /* Grab device info table */
-        sp = sizeof(TDESC) / sizeof(TINFO);
-        for (int i = 0; i < sp; i++) {
-            TINFO j = TDESC[i];
-            Serial.print(j.name);
-            Serial.print(",");
-            Serial.print(tunables[i]);
-            Serial.print(",");
-            Serial.print(j.min);
-            Serial.print(",");
-            Serial.print(j.max);
-            Serial.print(",");
-            Serial.print(j.desc);
-            Serial.print(";");
-        }
-        Serial.print("\n");
+        dumpCapabilities();
         break;
     }
   }
@@ -707,6 +669,27 @@ void parseBtCmd(char* hidSequence) { /* Translate to keystrokes */
     buf[bufPtr++] = key;
   } while (*(++hidSequence) != ';');
   if (bufPtr > 2) sendBt(buf);
+}
+
+void dumpCapabilities() {
+  for (int i = 0; i < TCMAX; i++) {
+      TINFO j;
+      memcpy_P(&j, &TDESC[i], sizeof(j));
+      char buffer[80];
+      strncpy_P (buffer, j.name, 80);
+      Serial.print(buffer);
+      Serial.print(",");
+      Serial.print(tunables[i]);
+      Serial.print(",");
+      Serial.print(j.min);
+      Serial.print(",");
+      Serial.print(j.max);
+      Serial.print(",");
+      strncpy_P (buffer, j.desc, 80);
+      Serial.print(buffer);
+      Serial.print(";");
+  }
+  Serial.print("\n");
 }
 /*
   ^ 128 KEY_LEFT_CTRL
