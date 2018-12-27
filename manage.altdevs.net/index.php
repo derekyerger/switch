@@ -9,9 +9,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 	require('views/home.php');
 	
 	?>
-	<input id="prog" type="hidden" value="<?php
-		print http_build_query(
-			fetchProgramming($comm), null, "&", PHP_QUERY_RFC3986); ?>">
+	<input id="prog" type="hidden" value="<?= /* TODO: per-device cache programming */
+		($_SESSION['prog'] = http_build_query(fetchProgramming($comm), null, "&", PHP_QUERY_RFC3986)); ?>">
 	<?php require('footer.php');
 
 
@@ -38,15 +37,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 			break;
 
 		case "page":
-			$f = strtolower(preg_replace("/ /", "", $_POST['d']));
+			/* Strip spaces and anything including/after a period */
+			$f = strtolower(preg_replace(["/ /", "/\..*$/"], "", $_POST['d']));
+			$subView = (strpos($_POST['d'], ".") ? preg_replace("/^.*\./", "", $_POST['d']) : null);
 			if (!file_exists("views/$f.php")) {
 				break;
 			} else {
 				ob_start();
 				require("views/$f.php");
 				echo "$('#content').html('" . preg_replace(["/\n/", "/'/"], ["\\n", "\'"], ob_get_clean()) . "');" .
-				"$('.nav li').removeClass('active');$('.nav li span:contains(\"" . $_POST['d'] . "\")').parents('li').addClass('active');" .
+				"$('.nav li').removeClass('active');$('.nav li span:contains(\"" . 
+					preg_replace("/\..*$/", "", $_POST['d']) . "\")').parents('li').addClass('active');" .
 				Js::append();
+			}
+			break;
+
+		case "component":
+			$f = strtolower(preg_replace(["/ /", "/\..*$/"], "", $_POST['d']));
+			$subView = (strpos($_POST['d'], ".") ? preg_replace("/^.*\./", "", $_POST['d']) : null);
+			if (!file_exists("component/$f.php")) {
+				break;
+			} else {
+				ob_start();
+				require("component/$f.php");
+				echo "$('#content').append('" . preg_replace(["/\n/", "/'/"], ["\\n", "\'"], ob_get_clean()) . "');" .
+					Js::append();
 			}
 			break;
 

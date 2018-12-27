@@ -36,6 +36,7 @@
 	</script>
 	<!-- ================== END BASE JS ================== -->
 	<script src="js/bootstrap-editable.min.js"></script>
+	<script src="js/jquery.gritter.min.js"></script>
 	
 	<script>
 		$(document).ready(function() {

@@ -3,5 +3,6 @@
 <!-- end page-header -->
 <?php
 
+require('component/system-controls.php');
 require('component/settings-editor.php');
 ?>

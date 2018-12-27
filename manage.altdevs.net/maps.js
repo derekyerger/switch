@@ -46,9 +46,19 @@ var keyMap = { "^" : "Ctrl+",
 	"`": "Delay 250ms",
 };
 
-var actionMap = { /* All the actions we can assign */
+var winClip = {
+	"Cut": "^x",
+	"Copy": "^c",
+	"Paste": "^v",
+	"Undo": "^z",
+	"Redo": "^y",
+	"Select All": "^a",
+};
 
-	"Common": {
+var platformMap = {
+
+	"*": {
+		"Custom Keyboard Input": "%%",
 		"Navigation": {
 			"Left Arrow": "X",
 			"Right Arrow": "W",
@@ -82,85 +92,98 @@ var actionMap = { /* All the actions we can assign */
 			"F11": "L",
 			"F12": "M",
 		},
-		"Clipboard and Undo/Redo": {
-			"OS-X": {
-				"Cut": "&x",
-				"Copy": "&c",
-				"Paste": "&v",
-				"Undo": "&z",
-				"Redo": "^&z",
-				"Select All": "&a",
+		"Web Browsing": {
+			"Navigation": {
+				"Page Down": "V",
+				"Page Up": "S",
+				"Top of Page": "R",
+				"Select Next Link": "!",
+				"Follow Link": "|",
+				"Go Back": "%X",
+				"Go to Page": "^t`https://",
 			},
-			"All other OSes": {
-				"Cut": "^x",
-				"Copy": "^c",
-				"Paste": "^v",
-				"Undo": "^z",
-				"Redo": "^y",
-				"Select All": "^a",
+			"Tabbed Browsing": {
+				"Previous Tab": "^+!",
+				"Next Tab": "^!",
+				"New Tab": "^t",
+				"Close Tab": "^E",
 			}
+		},
+	},
+	"Apple OS-X/iOS": {
+		"Clipboard and Undo": {
+			"Cut": "&x",
+			"Copy": "&c",
+			"Paste": "&v",
+			"Undo": "&z",
+			"Redo": "^&z",
+			"Select All": "&a",
 		},
 		"Window Management": {
-			"OS-X": {
-				"Next Window": "&!",
-				"Previous Window": "&+!",
-				"Show Desktop": "L",
-				"Task Manager": "^&q",
-			},
-			"Windows": {
-				"Show Desktop": "&d",
-				"Task Manager": "^+~",
-			},
-			"Windows, Linux": {
-				"Next Window": "%!",
-				"Previous Window": "%+!",
-			}
-		}
-	},
-	"Web Browsing": {
-		"Navigation": {
-			"Page Down": "V",
-			"Page Up": "S",
-			"Top of Page": "R",
-			"Select Next Link": "!",
-			"Follow Link": "|",
-			"Go Back": "%X",
-			"Go to Page": "^t`https://",
+			"Next Window": "&!",
+			"Previous Window": "&+!",
+			"Show Desktop": "L",
+			"Task Manager": "^&q",
 		},
-		"Tabbed Browsing": {
-			"Previous Tab": "^+!",
-			"Next Tab": "^!",
-			"New Tab": "^t",
-			"Close Tab": "^E",
-		}
-	},
-	"Desktop Applications": {
-		"OS-X": {
+		"Desktop Applications": {
 			"File menu": "^Cf",
 			"Edit menu": "^Ce",
 			"View menu": "^Cv",
 		},
-		"All other OSes": {
+	},
+	"Android": {
+		"Clipboard and Undo": winClip,
+	},
+	"Linux Gnome": {
+		"Clipboard and Undo": winClip,
+		"Window Management": {
+			"Next Window": "%!",
+			"Previous Window": "%+!",
+		},
+		"Desktop Applications": {
 			"File menu": "%f",
 			"Edit menu": "%e",
 			"View menu": "%v",
-		}
+		},
 	},
-	"Power Management": {
-		"Windows": {
+	"Linux KDE": {
+		"Clipboard and Undo": winClip,
+		"Window Management": {
+			"Next Window": "%!",
+			"Previous Window": "%+!",
+		},
+		"Desktop Applications": {
+			"File menu": "%f",
+			"Edit menu": "%e",
+			"View menu": "%v",
+		},
+	},
+	"Microsoft Windows": {
+		"Clipboard and Undo": winClip,
+		"Window Management": {
+			"Show Desktop": "&d",
+			"Task Manager": "^+~",
+			"Next Window": "%!",
+			"Previous Window": "%+!",
+		},
+		"Desktop Applications": {
+			"File menu": "%f",
+			"Edit menu": "%e",
+			"View menu": "%v",
+		},
+		"Power Management": {
 			"Sleep": "&WW|",
 			"Shut Down": "&xuu",
 			"Restart": "&xur",
-		}
-	},
-	"Launch Program": {
-		"Windows": {
+		},
+		"Launch Program": {
 			"Start Firefox": "&r``firefox|",
 			"Start Notepad": "&r``notepad|",
-		}
+		},
 	},
-	"Custom Keyboard Input": "%%",
 };
+
+var actionMap = platformMap['*']; /* All the actions we can assign */
 
 var helpMap = [ /* Help sequence */
 	{

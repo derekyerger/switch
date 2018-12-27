@@ -9,7 +9,6 @@ var actionStack;
 var rev = false;
 var ajaxRetFn;
 var ws;
-var beginner;
 
 function spinnerStart() {
 	$('.progress-overlay').show();
@@ -84,20 +83,14 @@ function setPart(newKeys) {
 
 	programming = a;
 
-	retr("save", programming);
+	doAjax("save", programming);
 	ddSet("none", "");
 }
 
 function template(pstring) {
 	programming = pstring;
-	retr("save", programming);
-	$.gritter.add({
-		title: "Template applied",
-		text: "The selected template has been applied to the device.",
-		//image: "../assets/img/user/user-3.jpg",
-		sticky: false,
-		time: ""
-	});
+	fetchPage('Configuration');
+	ajaxRetFn = '$("#templateLoaded").show(500);doAjax("save", programming);';
 }
 
 $(document).ready(function() {
@@ -120,6 +113,10 @@ function setupPing(port) {
 	} catch (e) { /* Fall back to AJAX polling */
 		doListen();
 	}
+}
+
+function stopPing() {
+	ws.onmessage = function(msg) { return; };
 }
 
 function delBond() {
@@ -160,9 +157,9 @@ function retr(cmd, data) {
 					clearTimeout(spinHandle);
 				}
 
-			} else if (cmd == "page" || cmd == "component") {
+			} else if (cmd == "page") {
 
-				if (cmd == "page") unping();
+				unping();
 				eval(rxObj);
 
 			} else if (cmd == "commit") {
@@ -178,9 +175,9 @@ function retr(cmd, data) {
 				programming = rxObj;
 				ddSet("ddProfile", data);
 
-			} else if (cmd == "save" && $("#ddProfile").length && $("#ddProfile").html() != "Profile") {
+			} else if (cmd == "save" && $("#ddProfile").html() != "Profile") {
 
-				retr("saveProfile", { name: $("#ddProfile").html(), data: programming });
+				doAjax("saveProfile", { name: $("#ddProfile").html(), data: programming });
 
 			}
 
@@ -197,64 +194,31 @@ var pingHandle = null;
 function ping(a) { /* Light up the visual */
 	if (a.substr(0,1) != ">") return;
 	a = a.substr(1);
-	if ($(".responsive-device").length) {
-		/* Visual exploding ping animation */
-		$(".responsive-device").append('<div id="ping' + ++pingCt + '" class="dot dot' + a[0] + '"></div>');
-		
-		/* Tooltip */
-		clearTimeout(pingHandle);
-		$(".dot").tooltip("hide");
-		$("#ping" + pingCt).attr('data-original-title', pMap[ a[1] ]).attr('data-trigger', 'manual').attr('data-placement', "bottom").attr('data-animation', 'true').tooltip("show");
-		
-		/* Remove after 3s */
-		pingHandle = setTimeout(unping, 3000);
-	}
+	/* Visual exploding ping animation */
+	$(".responsive-device").append('<div id="ping' + ++pingCt + '" class="dot dot' + a[0] + '"></div>');
+	
+	/* Tooltip */
+	clearTimeout(pingHandle);
+	$(".dot").tooltip("hide");
+	$("#ping" + pingCt).attr('data-original-title', pMap[ a[1] ]).attr('data-trigger', 'manual').attr('data-placement', "bottom").attr('data-animation', 'true').tooltip("show");
+	
+	/* Remove after 3s */
+	pingHandle = setTimeout(unping, 3000);
 	
 	/* Update list of commands */
 	lastCmds.push(a);
 	if (lastCmds.length > 10) lastCmds.shift();
 	populateLastCmds();
-
-	if ($('.note h4:contains("Blank device detected")').parents('.note').hide(300).length) {
-		/* Welcome mode */
-		retr("component", "command-history");
-		setTimeout(function() {
-			$('.note h4:contains("Blank device detected")').parents('.note').remove();
-			$("#ping" + pingCt).attr('data-original-title', pMap[ a[1] ]).attr('data-trigger', 'manual').attr('data-placement', "bottom").attr('data-animation', 'true').tooltip("show");
-			beginner = true;
-		}, 300);
-	}
-
 }
 
 function populateLastCmds() {
-	if (!$(".responsive-device-txt").length) return;
 	var s = "";
 	for (var c in lastCmds) {
 		actionStack = [];
 		var m = seekAction(actionMap, lastCmds[c].substr(2));
-		if (m) {
-			//s = "<p>" + locMapImg[ lastCmds[c][0] + lastCmds[c][1] ] + " " + (m ? m : friendlyKeys(lastCmds[c].substr(2, -1)) ) + "</p>" + s;
-			s = '<div class="btn-group"><p>' + locMapImg[ lastCmds[c][0] + lastCmds[c][1] ] +
-			' &nbsp; <button class="btn disabled btn-outline-secondary btn-xs">' + friendlyKeys(lastCmds[c].substr(2)) + 
-			'</button><a href="javascript:proxyAssign(\'' + lastCmds[c][0] + lastCmds[c][1] + '\');" class="btn btn-lime btn-xs">Reassign</a></p></div><br/>' + s;
-		} else {
-			s = '<div class="btn-group"><p>' + locMapImg[ lastCmds[c][0] + lastCmds[c][1] ] +
-			' &nbsp; <button class="btn disabled btn-outline-secondary btn-xs">Unassigned</button><a href="javascript:proxyAssign(\'' + lastCmds[c][0] + lastCmds[c][1] + '\');" class="btn btn-primary btn-xs">Assign to action</a></p></div><br/>' + s;
-		}
+		s = "<p>" + locMapImg[ lastCmds[c][0] + lastCmds[c][1] ] + " " + (m ? m : friendlyKeys(lastCmds[c].substr(2)) ) + "</p>" + s;
 	}
 	$(".responsive-device-txt").html(s);
-}
-
-function proxyAssign(cmd) {
-	if (beginner) $('.panel-title:contains("Device visual")').parents('.panel').children('.panel-body').hide(300);
-	if (!$('.panel-title:contains("Input assignment")').length) retr('component', 'input-assignment');
-	setTimeout(function() {
-		if (beginner) $('.panel-title:contains("Input assignment")')[0].scrollIntoView();
-		ddSet("ddLocation", locMap[ cmd[0] ]);
-		ddSet("ddImpulse", pMap[ cmd[1] ]);
-		$("#actionDlg").modal("show");
-	}, 300);
 }
 
 function unping() {
@@ -274,7 +238,7 @@ function doListen() {
 }
 
 function get() {
-	retr("get", null);
+	doAjax("get", null);
 }
 
 function save() {
@@ -299,9 +263,9 @@ function decodeProg() {
 
 function popClicks() {
 	/* Generate keymaps */
-	var ol = $("#keyboard")[0].offsetLeft;
-	var ot = $("#keyboard")[0].offsetTop;
-	var sf = $("#keyboard")[0].width / 650;
+	var ol = $(".img-fluid")[0].offsetLeft;
+	var ot = $(".img-fluid")[0].offsetTop;
+	var sf = $(".img-fluid")[0].width / 650;
 
 	var gen = '';
 	var rows = { 8: [ 38.3, "~BCDEFGHIJKLM  QT" ],
@@ -350,23 +314,37 @@ function popClicks() {
 	$("#keymap").html(gen);
 }
 
-function activateElt(p) {
+function popPage(p) {
 	switch (p) {
-		case "visual":
+		case "Status":
 			populateLastCmds();
+			var port = '7001';
+			if (/altdevs.net/.test(window.location.hostname)) port = '7101';
+			setupPing(port);
 			break;
 
-		case "assignment":
+		case "Configuration":
 			$("#actionDlg").on("shown.bs.modal", function() {
 				if ($(".ddActs").length == 1) $("#as1").dropdown("toggle");
 				popClicks();
 			});
 			$("#bluetooth label").removeClass("active");
-			//$("#bluetooth input[value=" + decodeProg()['bluetooth'] + "]").parent().addClass("active");
+			$("#bluetooth input[value=" + decodeProg()['bluetooth'] + "]").parent().addClass("active");
 			$("#bluetooth input").on("change", function(e) {
 				doAjax("set", encodeId(e.target.name) + "," + e.target.value);
 			});
 
+			break;
+
+		case "Advanced":
+			var r = decodeProg();
+			for (var k in r) $("#" + k).val(r[k]);
+			$("#enableAdjust label").removeClass("active");
+			$("#enableAdjust input[value=" + r['enableAdjust'] + "]").parent().addClass("active");
+			$("input").on("change", function(e) {
+				//r[ e.target.id ] = e.target.val;dd
+				doAjax("set", encodeId(e.target.name) + "," + e.target.value);
+			});
 			break;
 
 		case "Debug":
@@ -379,6 +357,7 @@ function activateElt(p) {
 			break;
 	}
 	$('[data-toggle="tooltip"]').tooltip()
+	if (p != "Status" && p != "Debug") stopPing();
 }
 
 function encodeId(id) {
@@ -625,7 +604,7 @@ function profileAdd() {
 		return;
 	}
 	doAjax("saveProfile", { name: $("#profName").val(), data: programming });
-	$("#profileSel").append('<a class="dropdown-item" href="javascript:void(0)" onclick="retr(\'getProfile\', \'' + $("#profName").val() + '\');">' + $("#profName").val() + '</a>');
+	$("#profileSel").append('<a class="dropdown-item" href="javascript:void(0)" onclick="doAjax(\'getProfile\', \'' + $("#profName").val() + '\');">' + $("#profName").val() + '</a>');
 	ddSet("ddProfile", $("#profName").val());
 	$("#profName").val('');
 }

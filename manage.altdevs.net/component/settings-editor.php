@@ -1,4 +1,6 @@
 <?php $title = "Settings editor";
+ob_start();
+
 $editables = [];
 foreach (array_filter(explode(";", $comm->txrxCmd(16, "", DEV_TIMEOUT))) as $i) {
 	$j = explode(",", $i);
@@ -11,4 +13,7 @@ foreach (array_filter(explode(";", $comm->txrxCmd(16, "", DEV_TIMEOUT))) as $i) 
 		"description" => $j[4]
 	];
 }
-require('elements/x-editable.php'); ?>
+require('elements/x-editable.php');
+
+$content = ob_get_clean();
+require('elements/panel.php'); ?>

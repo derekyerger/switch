@@ -22,6 +22,7 @@
 	<link href="css/default.css" rel="stylesheet" id="theme" />
 	<link href="css/altdevs.css" rel="stylesheet" />
 	<!-- ================== END BASE CSS STYLE ================== -->
+	<link href="css/jquery.gritter.css" rel="stylesheet" />
 	
 	<!-- ================== BEGIN BASE JS ================== -->
 	<script src="js/pace.min.js"></script>
@@ -73,7 +74,7 @@
 						</li>
 					</ul>
 				</li-->
-				<?php if ($user) { ?>
+				<?php if (isset($user)) { ?>
 				<li class="dropdown navbar-user">
 					<a href="javascript:;" class="dropdown-toggle" data-toggle="dropdown">
 						<div class="image image-icon bg-black text-grey-darker">
@@ -101,7 +102,7 @@
 			<!-- begin sidebar scrollbar -->
 			<div data-scrollbar="true" data-height="100%">
 				<!-- begin sidebar user -->
-				<?php if ($user) { ?>
+				<?php if (isset($user)) { ?>
 				<ul class="nav">
 					<li class="nav-profile">
 						<a href="javascript:;" data-toggle="nav-profile">
@@ -128,10 +129,26 @@
 				<!-- begin sidebar nav -->
 				<ul class="nav">
 					<li class="nav-header">Navigation</li>
-					<li class="active">
-						<a href="javascript:retr('page', 'Home')">
+					<li class="active has-sub">
+						<a href="javascript:retr('page', 'Home');">
 							<i class="fa fa-th-large"></i>
 							<span>Home</span>
+						</a>
+						<ul class="sub-menu">
+							<li><a href="javascript:retr('page', 'Home.status');">Status only</a></li>
+							<li><a href="javascript:retr('page', 'Home.assignments');">Assignments</a></li>
+						</ul>
+					</li>
+					<li>
+						<a href="javascript:retr('page', 'Templates')">
+							<i class="fa fa-book"></i>
+							<span>Templates</span>
+						</a>
+					</li>
+					<li>
+						<a href="javascript:retr('page', 'Help')">
+							<i class="fa fa-info"></i>
+							<span>Help</span>
 						</a>
 					</li>
 					<li>

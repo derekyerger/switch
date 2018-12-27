@@ -68,3 +68,27 @@
 	width: 1.5rem;
 	vertical-align: bottom;
 }
+
+.modal {
+	color: #ccc;
+}
+.modal-content {
+	background-color: #111;
+}
+.modal h1,.modal h2,.modal h3,.modal h4,.modal h5,.modal h6 {
+	color:#fff;
+}
+.modal-header {
+	border-bottom-color:#222
+}
+.modal-footer {
+	border-top-color:#222;
+}
+
+.dropdown-menu {
+	background: #000;
+}
+
+.dropdown-item {
+	color: #eee;
+}
