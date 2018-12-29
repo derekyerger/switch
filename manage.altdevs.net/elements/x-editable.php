@@ -20,7 +20,7 @@ $.fn.editable.defaults.url = '/tweak.php';"); ?>
 		<?php 
 			switch (isset($props['type']) ? $props['type'] : "") {
 				default:
-					Js::append("$('#ed$pk').editable();");
+					Js::append("$('#ed$pk').editable({validate:" . $props['validate'] . "});");
 			}
 		} ?>
 		</tbody>

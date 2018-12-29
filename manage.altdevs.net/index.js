@@ -2,6 +2,7 @@
 
 var spinHandle = null;
 var programming = '';
+var deviceData = '';
 var helpSeq, oldNavBrand, helpHandle = null;
 var pingCt = 0;
 var lastCmds = [];
@@ -91,12 +92,15 @@ function setPart(newKeys) {
 function template(pstring) {
 	programming = pstring;
 	retr("save", programming);
-	$.gritter.add({
+	swal({
 		title: "Template applied",
 		text: "The selected template has been applied to the device.",
-		//image: "../assets/img/user/user-3.jpg",
-		sticky: false,
-		time: ""
+		type: "success",
+		showCancelButton: true,
+		cancelButtonClass: "btn-lime",
+		cancelButtonText: "Customize"},
+	function(x) {
+		if (!x) retr("page", "Home.assignments");
 	});
 }
 
@@ -136,6 +140,8 @@ function retr(cmd, data) {
 			clearTimeout(spinHandle);
 			spinnerEnd();
 
+			if (cmd == "page") unping();
+			
 			if (cmd == "get") {
 				
 				ddSet("ddLocation", locMap[ rxObj[1] ]);
@@ -160,29 +166,11 @@ function retr(cmd, data) {
 					clearTimeout(spinHandle);
 				}
 
-			} else if (cmd == "page" || cmd == "component") {
-
-				if (cmd == "page") unping();
-				eval(rxObj);
-
-			} else if (cmd == "commit") {
-
-				$("#prog").val(rxObj);
-
-			} else if (cmd == "undebug") {
-			
-				fetchPage('Advanced');
-
-			} else if (cmd == "getProfile") {
-
-				programming = rxObj;
-				ddSet("ddProfile", data);
-
 			} else if (cmd == "save" && $("#ddProfile").length && $("#ddProfile").html() != "Profile") {
 
 				retr("saveProfile", { name: $("#ddProfile").html(), data: programming });
 
-			}
+			} else eval(rxObj);
 
 			if (ajaxRetFn && cmd != "getHelp") {
 				var t = ajaxRetFn;
@@ -233,14 +221,14 @@ function populateLastCmds() {
 	for (var c in lastCmds) {
 		actionStack = [];
 		var m = seekAction(actionMap, lastCmds[c].substr(2));
-		if (m) {
+		if (m || lastCmds[c].substr(2) !== ";") {
 			//s = "<p>" + locMapImg[ lastCmds[c][0] + lastCmds[c][1] ] + " " + (m ? m : friendlyKeys(lastCmds[c].substr(2, -1)) ) + "</p>" + s;
 			s = '<div class="btn-group"><p>' + locMapImg[ lastCmds[c][0] + lastCmds[c][1] ] +
-			' &nbsp; <button class="btn disabled btn-outline-secondary btn-xs">' + friendlyKeys(lastCmds[c].substr(2)) + 
-			'</button><a href="javascript:proxyAssign(\'' + lastCmds[c][0] + lastCmds[c][1] + '\');" class="btn btn-lime btn-xs">Reassign</a></p></div><br/>' + s;
+			' &nbsp; ' + (m ? '<button class="btn disabled btn-outline-light btn-xs">' + m + '</button>' : friendlyKeys(lastCmds[c].substr(2))) + 
+			'<button onclick="javascript:proxyAssign(\'' + lastCmds[c][0] + lastCmds[c][1] + '\');" class="btn btn-lime btn-xs">Reassign</button></p></div><br/>' + s;
 		} else {
 			s = '<div class="btn-group"><p>' + locMapImg[ lastCmds[c][0] + lastCmds[c][1] ] +
-			' &nbsp; <button class="btn disabled btn-outline-secondary btn-xs">Unassigned</button><a href="javascript:proxyAssign(\'' + lastCmds[c][0] + lastCmds[c][1] + '\');" class="btn btn-primary btn-xs">Assign to action</a></p></div><br/>' + s;
+			' &nbsp; <button class="btn disabled btn-outline-secondary btn-xs">Unassigned</button><button onclick="javascript:proxyAssign(\'' + lastCmds[c][0] + lastCmds[c][1] + '\');" class="btn btn-primary btn-xs">Assign to action</button></p></div><br/>' + s;
 		}
 	}
 	$(".responsive-device-txt").html(s);
@@ -278,7 +266,7 @@ function get() {
 }
 
 function save() {
-	doAjax("commit", null);
+	retr("commit", null);
 }
 
 function fetchPage(p) {
@@ -290,7 +278,7 @@ function fetchPage(p) {
 
 function decodeProg() {
 	var r = {};
-	$("#prog").val().split("&").forEach(function(k) {
+	deviceData.split("&").forEach(function(k) {
 		k = k.split("=");
 		r[k[0]] = decodeURIComponent(k[1] || '');
 	});
@@ -368,16 +356,8 @@ function activateElt(p) {
 			});
 
 			break;
-
-		case "Debug":
-			try { /* Use websockets to receive pushed pings if possible */
-				if (!ws) ws = new WebSocket("ws://172.31.11.1:9000/tty");
-				ws.onmessage = function(msg) { debugStuff(msg); };
-			} catch (e) { /* Fall back to AJAX polling */
-				break;
-			}
-			break;
 	}
+	
 	$('[data-toggle="tooltip"]').tooltip()
 }
 
@@ -402,32 +382,39 @@ function encodeId(id) {
 
 function ddSet(id, txt) {
 	$("#" + id).html(txt);
-	if ( $("#ddLocation").html() != "Location"
-		&& $("#ddImpulse").html() != "Impulse") {
-		$("#ddAction").removeClass("disabled");
-		$('#ddAction').attr("data-toggle", "modal");
-		$("#popupKbd").hide();
-		/* Find current assignment */
+	switch (id) {
+		case "ddPlatform":
+			actionMap = $.extend({}, platformMap['*'], platformMap[txt]);
+			/* no break because the dialog muust be rebuilt with the new options */
 
-		var ca = getPart();
-		if (ca) {
-			actionStack = [];
-			var cn = seekAction(actionMap, ca);
-			var c = 0;
-			buildAction();
-			if (!actionStack.length) {
-				nextAction(1, "Custom Keyboard Input");
-				$("#popupKbd").show();
-				popClicks();
-				$("#keys").val(ca);
-			} else while (actionStack.length)
-				nextAction(++c, actionStack.pop());
+		default:
+			if ( $("#ddLocation").html() != "Location"
+				&& $("#ddImpulse").html() != "Impulse") {
+				$("#ddAction").removeClass("disabled");
+				$('#ddAction').attr("data-toggle", "modal");
+				$("#popupKbd").hide();
+				/* Find current assignment */
 
-			$("#ddAssignment").removeClass("btn-outline-danger disabled").addClass("btn-info").text(cn ? cn : "Custom Key Sequence").attr("data-toggle", "modal");
-		} else {
-			$("#ddAssignment").addClass("btn-outline-danger disabled").removeClass("btn-info").text("Unassigned").removeAttr("data-toggle");
-			buildAction();
-		}
+				var ca = getPart();
+				if (ca) {
+					actionStack = [];
+					var cn = seekAction(actionMap, ca);
+					var c = 0;
+					buildAction();
+					if (!actionStack.length) {
+						nextAction(1, "Custom Keyboard Input");
+						$("#popupKbd").show();
+						popClicks();
+						$("#keys").val(ca);
+					} else while (actionStack.length)
+						nextAction(++c, actionStack.pop());
+
+					$("#ddAssignment").removeClass("btn-outline-danger disabled").addClass("btn-info").text(cn ? cn : "Custom Key Sequence").attr("data-toggle", "modal");
+				} else {
+					$("#ddAssignment").addClass("btn-outline-danger disabled").removeClass("btn-info").text("Unassigned").removeAttr("data-toggle");
+					buildAction();
+				}
+			}
 	}
 }
 
@@ -636,4 +623,16 @@ function profileRemove() {
 	doAjax("saveProfile", { name: $("#ddProfile").html(), data: "" });
 	$("#profileSel a:contains('" + $("#ddProfile").html() + "')").remove();
 	ddSet("ddProfile", "Profile");
+}
+
+function calibrate() {
+	swal({
+		title: "Calibration",
+		text: "Entering calibration mode will clear any temporary configuration. Continue?",
+		type: "warning",
+		showCancelButton: true,
+		cancelButtonClass: "btn-lime"},
+	function(x) {
+		if (x) retr("page", "Calibration");
+	});
 }

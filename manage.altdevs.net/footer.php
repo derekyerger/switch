@@ -33,10 +33,12 @@
 	var pS = <?php print json_encode(DEV_IMPULSE); ?>;
 	var locMap = <?php print json_encode(array_flip(DEV_SENSOR)); ?>;
 	var pMap = <?php print json_encode(array_flip(DEV_IMPULSE)); ?>;
+	<?= JS::append() ?>
 	</script>
 	<!-- ================== END BASE JS ================== -->
 	<script src="js/bootstrap-editable.min.js"></script>
 	<script src="js/jquery.gritter.min.js"></script>
+	<script src="js/sweetalert.min.js"></script>
 	
 	<script>
 		$(document).ready(function() {

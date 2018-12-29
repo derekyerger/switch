@@ -23,6 +23,7 @@
 	<link href="css/altdevs.css" rel="stylesheet" />
 	<!-- ================== END BASE CSS STYLE ================== -->
 	<link href="css/jquery.gritter.css" rel="stylesheet" />
+	<link href="css/sweetalert.css" rel="stylesheet" />
 	
 	<!-- ================== BEGIN BASE JS ================== -->
 	<script src="js/pace.min.js"></script>
@@ -120,7 +121,7 @@
 						<ul class="nav nav-profile">
 							<li><a href="javascript:;"><i class="fa fa-cog"></i> Settings</a></li>
 							<li><a href="javascript:;"><i class="fa fa-pencil-alt"></i> Send Feedback</a></li>
-							<li><a href="javascript:;"><i class="fa fa-question-circle"></i> Helps</a></li>
+							<li><a href="javascript:;"><i class="fa fa-question-circle"></i> Help</a></li>
 						</ul>
 					</li>
 				</ul>
@@ -130,29 +131,35 @@
 				<ul class="nav">
 					<li class="nav-header">Navigation</li>
 					<li class="active has-sub">
-						<a href="javascript:retr('page', 'Home');">
+						<a href="javascript:;" onclick="retr('page', 'Home');">
 							<i class="fa fa-th-large"></i>
 							<span>Home</span>
 						</a>
 						<ul class="sub-menu">
-							<li><a href="javascript:retr('page', 'Home.status');">Status only</a></li>
-							<li><a href="javascript:retr('page', 'Home.assignments');">Assignments</a></li>
+							<li><a href="javascript:" onclick="retr('page', 'Home.status');">Status only</a></li>
+							<li><a href="javascript:" onclick="retr('page', 'Home.assignments');">Assignments</a></li>
 						</ul>
 					</li>
 					<li>
-						<a href="javascript:retr('page', 'Templates')">
+						<a href="javascript:" onclick="retr('page', 'Templates')">
 							<i class="fa fa-book"></i>
 							<span>Templates</span>
 						</a>
 					</li>
 					<li>
-						<a href="javascript:retr('page', 'Help')">
+						<a href="javascript:" onclick="retr('page', 'Help')">
 							<i class="fa fa-info"></i>
 							<span>Help</span>
 						</a>
 					</li>
 					<li>
-						<a href="javascript:retr('page', 'Advanced')">
+						<a href="javascript:" onclick="calibrate();">
+							<i class="fa fa-puzzle-piece"></i>
+							<span>Calibration</span>
+						</a>
+					</li>
+					<li>
+						<a href="javascript:" onclick="retr('page', 'Advanced')">
 							<i class="fa fa-list-ul"></i>
 							<span>Advanced</span>
 						</a>

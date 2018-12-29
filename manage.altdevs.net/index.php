@@ -8,11 +8,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
 	require('views/home.php');
 	
-	?>
-	<input id="prog" type="hidden" value="<?= /* TODO: per-device cache programming */
-		($_SESSION['prog'] = http_build_query(fetchProgramming($comm), null, "&", PHP_QUERY_RFC3986)); ?>">
-	<?php require('footer.php');
-
+	/* TODO: per-device cache programming */
+	JS::append("deviceData = '" . ($_SESSION['prog'] = http_build_query(fetchProgramming($comm), null, "&", PHP_QUERY_RFC3986)) . "'");
+	
+	require('footer.php');
 
 } else { // <~~ GET (view) / POST (ajax) ~~>
 	switch ($_POST['f']) {
@@ -22,8 +21,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
 		case "commit":
 			$comm->txrxCmd(4);
-			print http_build_query(
-				fetchProgramming($comm), null, "&", PHP_QUERY_RFC3986);
+			print "deviceData = '" . http_build_query(
+				fetchProgramming($comm), null, "&", PHP_QUERY_RFC3986) . "';";
+			print 'swal("Changes saved", "All settings have been saved to permanent storage.", "success")';
 			break;
 
 		case "get":
@@ -48,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 				echo "$('#content').html('" . preg_replace(["/\n/", "/'/"], ["\\n", "\'"], ob_get_clean()) . "');" .
 				"$('.nav li').removeClass('active');$('.nav li span:contains(\"" . 
 					preg_replace("/\..*$/", "", $_POST['d']) . "\")').parents('li').addClass('active');" .
-				Js::append();
+				Js::append() . "$('#page-container')[0].scrollIntoView();";
 			}
 			break;
 
@@ -74,8 +74,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 			$comm->txrxCmd(15);
 			break;
 
+		case "debug":
+			$comm->txrxCmd(11, "1\n");
+			print "$('#debugDlg').modal('show'); if (ws) ws.onmessage = function(msg) { debugStuff(msg); };";
+			break;
+
 		case "undebug":
 			$comm->txrxCmd(11, "0\n");
+			print "ws.onmessage = function(msg) { ping(msg.data); };";
 			break;
 
 		case "reset":
@@ -84,9 +90,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 			break;
 
 		case "getProfile":
-			$p = json_decode(file_get_contents("profiles"), true)[$_POST['d']];
-			print $p;
+			$p = preg_replace("/'/", "\\'", json_decode(file_get_contents("profiles"), true)[$n = $_POST['d']]);
 			$comm->txrxCmd(3, "$p\n");
+			print "programming = '$p'; ddSet('ddProfile', '$n');";
 			break;
 
 		case "saveProfile":
