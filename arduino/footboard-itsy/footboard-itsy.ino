@@ -9,7 +9,7 @@
 
 void (*resetFunc) (void) = 0;
 
-const int MAGIC = 12; /* To detect if flash has been initialized */
+const int MAGIC = 14; /* To detect if flash has been initialized */
 const int STRBUF = 512;  /* Buffer size for programming string */
 const int SAMP = 50;    /* For array allocation */
 const int MAXSENS = 2;   /* For uarray allocation */
@@ -172,6 +172,20 @@ void setup() {
     while ((pString[sp++] = EEPROM.read(adx++)) != 0);
   }
 
+  if (EEPROM.read(1006) != 121) { /* Unique ID */
+    while (analogRead(0) < 100) delay(150);
+    delay(500);
+    randomSeed(analogRead(0) + analogRead(1));
+    EEPROM.update(1006, 121);
+    for (adx = 1007; adx < 1024; adx++) {
+      int c = random(62);
+      if (c > 50) c -= 3;
+      else if (c > 25) c += 39;
+      else c += 97;
+      EEPROM.update(adx, c);
+    }
+  }
+
   Serial.setTimeout(60000);
   for (byte p = 0; p < CLLMAX - 1; p++) cLL[p].next = &cLL[p + 1];
   lastIf = !*toBLE;
@@ -212,7 +226,7 @@ void loop() {
       byte avg = avgS(s);
 
       if (millis() - lastImpulse[s] >= *longP) {
-        impulse |= 2;
+        impulse = 2;
       } else if (avg >= *hardP) impulse |= 1;
 
       readImpulse = *settleTime;
@@ -318,8 +332,16 @@ skip:
         //ble.sendCommandCheckOK("AT+GAPDELBONDS");
         break;
 
-      case 16: /* Grab device info table */
+      case 16: /* Grab device advanced info table */
         dumpCapabilities();
+        break;
+
+      case 17: /* Get device capability string */
+      case 18: /* Or just the id */
+        Serial.print(F("v1.1-"));
+        for (int adx = 1007; adx < 1024; adx++) Serial.write(EEPROM.read(adx));
+        if (val == 17) Serial.print(F("-aid1-b6565944"));
+        Serial.print("\n");
         break;
     }
   }
@@ -691,36 +713,3 @@ void dumpCapabilities() {
   }
   Serial.print("\n");
 }
-/*
-  ^ 128 KEY_LEFT_CTRL
-  + 129 KEY_LEFT_SHIFT
-  % 130 KEY_LEFT_ALT
-  & 131 KEY_LEFT_GUI
-  | 176 KEY_RETURN
-  ~ 177 KEY_ESC
-  _ 178 KEY_BACKSPACE
-  ! 179 KEY_TAB
-  A 193 KEY_CAPS_LOCK   -- -128 for this and below
-  B 194 KEY_F1
-  C 195 KEY_F2
-  D 196 KEY_F3
-  E 197 KEY_F4
-  F 198 KEY_F5
-  G 199 KEY_F6
-  H 200 KEY_F7
-  I 201 KEY_F8
-  J 202 KEY_F9
-  K 203 KEY_F10
-  L 204 KEY_F11
-  M 205 KEY_F12
-  Q 209 KEY_INSERT
-  R 210 KEY_HOME
-  S 211 KEY_PAGE_UP
-  T 212 KEY_DELETE
-  U 213 KEY_END
-  V 214 KEY_PAGE_DOWN
-  W 215 KEY_RIGHT_ARROW
-  X 216 KEY_LEFT_ARROW
-  Y 217 KEY_DOWN_ARROW
-  Z 218 KEY_UP_ARROW
-*/

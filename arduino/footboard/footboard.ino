@@ -5,6 +5,7 @@
 #include <Arduino.h>
 #include <SPI.h>
 #include <LowPower.h>
+#include <avr/pgmspace.h>
 #include "Adafruit_BLE.h"
 #include "Adafruit_BluefruitLE_SPI.h"
 #include "Adafruit_BluefruitLE_UART.h"
@@ -20,24 +21,10 @@ void (*resetFunc) (void) = 0;
 
 const int MAGIC = 6; /* To detect if flash has been initialized */
 const int STRBUF = 512;  /* Buffer size for programming string */
-const int MENUFIXED = 4; /* Where to start counting tunable entries */
 const int SAMP = 50;    /* For array allocation */
 const int MAXSENS = 2;   /* For uarray allocation */
 
-/*const char *tunablesDesc[] = { "Sensor count [1 to 2]",
-                               "Hard press default",
-                               "Soft press default",
-                               "Long press (ms)",
-                               "Sample interval (ms)",
-                               "Settle time (samples)",
-                               "Debounce time (ms)",
-                               "Sample averaging window [1 to 50]",
-                               "Pressure bias",
-                               "Minimum group",
-                               "Enable adjust",
-                               "Bluetooth",
-                               "Turn off WiFi at battery level"
-                             };*/
+#include "device.h"
 
 int tunables[] = { 2, 145, 125, 400, 2, 50, 100, 50, 20, 15, 0, 1, 100 };
 
@@ -71,7 +58,7 @@ long powerSavingTime = 0;
 
 int adx = 0;
 boolean debug;
-int impulse;
+byte impulse;
 byte sensorMask;
 byte readImpulse;
 boolean captureS1 = false;
@@ -109,6 +96,7 @@ char* fetchImpulse(byte sensor, byte impulse);
 void parseCmd(char* hidSequence);
 void clearS(byte sensor);
 byte avgS(byte sensor);
+void dumpCapabilities();
 
 /* ===== Main setup, loop, supporting functions ===== */
 Adafruit_BluefruitLE_SPI ble(BLUEFRUIT_SPI_CS, BLUEFRUIT_SPI_IRQ, BLUEFRUIT_SPI_RST);
@@ -359,6 +347,17 @@ skip:
         ble.sendCommandCheckOK("AT+GAPDELBONDS");
         break;
 
+      case 16: /* Grab device info table */
+        dumpCapabilities();
+        break;
+
+      case 17: /* Get device capability string */
+      case 18: /* Or just the id */
+        Serial.print(F("v1.1-"));
+        for (int adx = 1007; adx < 1024; adx++) Serial.write(EEPROM.read(adx));
+        if (val == 17) Serial.print(F("-aid2-b6565944"));
+        Serial.print("\n");
+        break;
     }
   }
 
@@ -722,36 +721,24 @@ void parseBtCmd(char* hidSequence) { /* Translate to keystrokes */
   } while (*(++hidSequence) != ';');
   if (bufPtr > 2) sendBt(buf);
 }
-/*
-  ^ 128 KEY_LEFT_CTRL
-  + 129 KEY_LEFT_SHIFT
-  % 130 KEY_LEFT_ALT
-  & 131 KEY_LEFT_GUI
-  | 176 KEY_RETURN
-  ~ 177 KEY_ESC
-  _ 178 KEY_BACKSPACE
-  ! 179 KEY_TAB
-  A 193 KEY_CAPS_LOCK   -- -128 for this and below
-  B 194 KEY_F1
-  C 195 KEY_F2
-  D 196 KEY_F3
-  E 197 KEY_F4
-  F 198 KEY_F5
-  G 199 KEY_F6
-  H 200 KEY_F7
-  I 201 KEY_F8
-  J 202 KEY_F9
-  K 203 KEY_F10
-  L 204 KEY_F11
-  M 205 KEY_F12
-  Q 209 KEY_INSERT
-  R 210 KEY_HOME
-  S 211 KEY_PAGE_UP
-  T 212 KEY_DELETE
-  U 213 KEY_END
-  V 214 KEY_PAGE_DOWN
-  W 215 KEY_RIGHT_ARROW
-  X 216 KEY_LEFT_ARROW
-  Y 217 KEY_DOWN_ARROW
-  Z 218 KEY_UP_ARROW
-*/
+
+void dumpCapabilities() {
+  for (int i = 0; i < TCMAX; i++) {
+      TINFO j;
+      memcpy_P(&j, &TDESC[i], sizeof(j));
+      char buffer[80];
+      strncpy_P (buffer, j.name, 80);
+      Serial.print(buffer);
+      Serial.print(",");
+      Serial.print(tunables[i]);
+      Serial.print(",");
+      Serial.print(j.min);
+      Serial.print(",");
+      Serial.print(j.max);
+      Serial.print(",");
+      strncpy_P (buffer, j.desc, 80);
+      Serial.print(buffer);
+      Serial.print(";");
+  }
+  Serial.print("\n");
+}

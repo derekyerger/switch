@@ -1,5 +1,6 @@
 <?php $title = "System controls";
 ob_start(); ?>
+<p>Device ID: <?= $comm->txrxCmd(17, null, 1000) ?></p>
 <button type="button" class="btn btn-primary" onclick="retr('commit');">Save to memory</button>
 <button type="button" class="btn btn-danger" onclick="retr('debug');">Debugging info</button>
 <button type="button" class="btn btn-danger" onclick="retr('reset');">Reboot Device</button>
