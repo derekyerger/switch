@@ -9,7 +9,6 @@ var locMapImg = { 10: '<img class="tico" src="bar.svg"><img class="tico" src="ba
 	30: '<img class="tico" src="bar.svg"><img class="tico" src="i0.svg"><img class="tico" src="bar.svg">',
 	31: '<img class="tico" src="bar.svg"><img class="tico" src="i1.svg"><img class="tico" src="bar.svg">',
 	32: '<img class="tico" src="bar.svg"><img class="tico" src="i2.svg"><img class="tico" src="bar.svg">',
-
 };
 
 var keyMap = { "^" : "Ctrl+",
@@ -188,14 +187,14 @@ var actionMap = platformMap['*']; /* All the actions we can assign */
 var helpMap = [ /* Help sequence */
 	{
 		"a": 1,
-		"e": 'fetchPage("Status");',
+		"e": 'retr("page", "Home");',
 	}, {
-		"p": "bottom",
-		"#mStatus": "The Status screen shows the current usage of the device. As inputs are detected, this window shows what was detected"
+		"p": "right",
+		".nav li span:contains(\"Home\")": "The Status screen shows the current usage of the device. As inputs are detected, this window shows what was detected"
 	}, {
-		"#sImg": "Inputs will be displayed here. An animation and pop-up shows the input",
+		".img-fluid": "Inputs will be displayed here. An animation and pop-up shows the input",
 	}, {
-		"#sList": "The last ten inputs are listed here",
+		".responsive-device-txt": "The last ten inputs are listed here",
 	}, {
 		"a": 1,
 		"e": 'fetchPage("Configuration");',

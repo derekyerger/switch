@@ -14,7 +14,8 @@ if (!isset($subView) || $subView == "assignments") {
 	require('component/input-assignment.php'); ?>
 	<div class="row">
 		<div class="col-sm-4">
-<?php require('component/os-selection.php'); ?>
+<?php require('component/platform.php');
+if (DEV_HAS_BLUETOOTH) require('component/interface.php'); ?>
 		</div>
 		<div class="col-sm-8">
 <?php require('component/profiles.php'); ?>

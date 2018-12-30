@@ -10,4 +10,12 @@ define('DEV_IMPULSE', [
 	"Press-and-Hold" => 2 ]);
 
 define('DEV_IMAGE', 'devices/aid2.png');
+
+define('DEV_CSS', '
+	.dot1 { left: 90% }
+	.dot2 { left: 10% }
+	.dot3 { left: 50% }
+');
+
+define('DEV_HAS_BLUETOOTH', true);
 ?>

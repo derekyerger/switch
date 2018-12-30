@@ -47,10 +47,6 @@
 	border-radius: 50%;
 }
 
-.dot1 { left: 90% }
-.dot2 { left: 10% }
-.dot3 { left: 50% }
-
 @keyframes dot-anim {
 	0% {
 		opacity: 1;

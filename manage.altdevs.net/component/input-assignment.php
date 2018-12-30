@@ -64,7 +64,7 @@ require('elements/panel.php'); ?>
 				<p> Keyboard assignment </p>
 				<input id="keys" type="text" style="width: 100%;" />
 				<div class="modal-body" style="position:relative;">
-					<img id="keyboard" src="keyboard.png" class="img-fluid" />
+					<img id="keyboard" src="img/keyboard.png" class="img-fluid" />
 					<div id="keymap"></div>
 				</div>
 			</div>

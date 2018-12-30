@@ -269,13 +269,6 @@ function save() {
 	retr("commit", null);
 }
 
-function fetchPage(p) {
-	$("#container").html("");
-	$(".nav-item").removeClass('active');
-	$("#m" + p).parent().addClass("active");
-	doAjax("page", p);
-}
-
 function decodeProg() {
 	var r = {};
 	deviceData.split("&").forEach(function(k) {
@@ -349,12 +342,14 @@ function activateElt(p) {
 				if ($(".ddActs").length == 1) $("#as1").dropdown("toggle");
 				popClicks();
 			});
+			break;
+		
+		case "interface":
 			$("#bluetooth label").removeClass("active");
-			//$("#bluetooth input[value=" + decodeProg()['bluetooth'] + "]").parent().addClass("active");
+			$("#bluetooth input[value=" + decodeProg()['bluetooth'] + "]").parent().addClass("active");
 			$("#bluetooth input").on("change", function(e) {
-				doAjax("set", encodeId(e.target.name) + "," + e.target.value);
+				retr("set", encodeId(e.target.name) + "," + e.target.value);
 			});
-
 			break;
 	}
 	
@@ -554,7 +549,7 @@ function helpSeq(id) {
 	if (!helpMap[id]['a']) {
 		if (helpMap[id]['t'])
 			helpHandle = setTimeout(helpSeq.bind(null, id + (rev ? -1 : 1)), helpMap[id]['t'] * 1000);
-		else doAjax("getHelp", id);
+		else retr("getHelp", id);
 
 		clearTimeout(spinHandle);
 	}

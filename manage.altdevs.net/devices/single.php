@@ -8,4 +8,10 @@ define('DEV_IMPULSE', [
 	"Press-and-Hold" => 2 ]);
 
 define('DEV_IMAGE', 'devices/single.png');
+
+define('DEV_CSS', '
+	.dot1 { left: 50% }
+');
+
+define('DEV_HAS_BLUETOOTH', false);
 ?>

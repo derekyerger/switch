@@ -28,8 +28,14 @@ identity=${identity:0:21}
 socat -u UNIX-RECV:$identity.tx STDOUT &
 spid=$!
 
+# Find available port
+for port in `seq 7001 7099`; do
+	netstat -ln |awk '/^tcp/{print $4}' |grep -q $port || break;
+done
+echo $port > $identity.port
+
 # Dump all data received from the client into a file
-stdbuf -i0 -o0 cat > $identity.rx
+stdbuf -i0 -o0 cat | tee $identity.rx | php ws/ttyws.php $port
 
 # If we're at this point, EOF has been received and the connection is terminated
 kill $spid
