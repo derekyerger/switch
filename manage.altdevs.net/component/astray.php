@@ -11,7 +11,7 @@ JS::append("
    		$('iframe').height($(window).height()*.9);
     });
 ");
-$comm->txrxCmd(3, "\n"); /* Clears device */
+$comm->txrxCmd(3, "\x0\n"); /* Clears device */
 JS::append("if (ws) ws.onmessage = function(msg) {
 	console.log(msg.data);
 	t = $('iframe')[0].contentWindow.onMoveKey;

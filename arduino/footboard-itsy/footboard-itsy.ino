@@ -340,7 +340,7 @@ skip:
       case 18: /* Or just the id */
         Serial.print(F("v1.1-"));
         for (int adx = 1007; adx < 1024; adx++) Serial.write(EEPROM.read(adx));
-        if (val == 17) Serial.print(F("-aid1-b6565944"));
+        if (val == 17) Serial.print(F("-aid1-fd2aa0ff"));
         Serial.print("\n");
         break;
     }

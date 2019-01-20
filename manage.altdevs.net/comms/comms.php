@@ -132,7 +132,7 @@ class SerialDevice implements Device {
 		if (isset($db[$device]) && file_exists('/proc/' . ($db[$device]['pid']))) {
 			$this->rxFile = $db[$device]['file'];
 		} else {
-			shell_exec("kill " . ($db[$device]['pid']+1) . "; kill " . ($db[$device]['pid']+2));
+			if (isset($db[$device]['pid'])) shell_exec("kill " . ($db[$device]['pid']+1) . "; kill " . ($db[$device]['pid']+2));
 			$stdbuf = "stdbuf -i0 -o0 -e0";
 			$php = trim(shell_exec("which php || which php-cli || echo /usr/bin/php"));
 			$db[$device]['file'] = $this->rxFile = $tmp = tempnam('/tmp', 'rx.');

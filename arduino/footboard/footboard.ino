@@ -1,6 +1,3 @@
-
-
-
 /* Copyright (c) 2016-2018 by Derek Yerger. All Rights Reserved. Patent pending. */
 
 #include <EEPROM.h>
@@ -29,7 +26,7 @@ const int MAXSENS = 2;   /* For uarray allocation */
 
 #include "device.h"
 
-int tunables[] = { 2, 145, 125, 400, 2, 50, 100, 50, 20, 15, 0, 1, 100 };
+int tunables[] = { 2, 145, 125, 300, 1, 30, 0, 50, 20, 15, 1, 0, 100 };
 
 /* Array mapped to legible pointer names */
 int *numSensors = &tunables[0];
@@ -204,6 +201,20 @@ void setup() {
     while ((pString[sp++] = EEPROM.read(adx++)) != 0);
   }
 
+  if (EEPROM.read(1006) != 121) { /* Unique ID */
+    while (analogRead(0) < 100) delay(150);
+    delay(500);
+    randomSeed(analogRead(0) + analogRead(1));
+    EEPROM.update(1006, 121);
+    for (adx = 1007; adx < 1024; adx++) {
+      int c = random(62);
+      if (c > 50) c -= 3;
+      else if (c > 25) c += 39;
+      else c += 97;
+      EEPROM.update(adx, c);
+    }
+  }
+
   Serial1.setTimeout(60000);
   for (byte p = 0; p < CLLMAX - 1; p++) cLL[p].next = &cLL[p + 1];
   lastIf = !*toBLE;
@@ -356,10 +367,10 @@ skip:
 
       case 17: /* Get device capability string */
       case 18: /* Or just the id */
-        Serial.print(F("v1.1-"));
-        for (int adx = 1007; adx < 1024; adx++) Serial.write(EEPROM.read(adx));
-        if (val == 17) Serial.print(F("-aid2-b6565944"));
-        Serial.print("\n");
+        Serial1.print(F("v1.1-"));
+        for (int adx = 1007; adx < 1024; adx++) Serial1.write(EEPROM.read(adx));
+        if (val == 17) Serial1.print(F("-aid2-fd2aa0ff"));
+        Serial1.print("\n");
         break;
     }
   }
@@ -731,17 +742,17 @@ void dumpCapabilities() {
       memcpy_P(&j, &TDESC[i], sizeof(j));
       char buffer[80];
       strncpy_P (buffer, j.name, 80);
-      Serial.print(buffer);
-      Serial.print(",");
-      Serial.print(tunables[i]);
-      Serial.print(",");
-      Serial.print(j.min);
-      Serial.print(",");
-      Serial.print(j.max);
-      Serial.print(",");
+      Serial1.print(buffer);
+      Serial1.print(",");
+      Serial1.print(tunables[i]);
+      Serial1.print(",");
+      Serial1.print(j.min);
+      Serial1.print(",");
+      Serial1.print(j.max);
+      Serial1.print(",");
       strncpy_P (buffer, j.desc, 80);
-      Serial.print(buffer);
-      Serial.print(";");
+      Serial1.print(buffer);
+      Serial1.print(";");
   }
-  Serial.print("\n");
+  Serial1.print("\n");
 }

@@ -2,7 +2,7 @@
 ob_start();
 
 $editables = [];
-foreach (array_filter(explode(";", $comm->txrxCmd(16, "", DEV_TIMEOUT))) as $i) {
+foreach (array_filter(explode(";", $comm->txrxCmd(16, "", DEV_TIMEOUT*2))) as $i) {
 	$j = explode(",", $i);
 	$editables[] = [
 		"title" => $j[0],

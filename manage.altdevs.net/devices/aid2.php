@@ -1,4 +1,4 @@
-<?php
+<?php require('pressurebased.php');
 define('DEV_SENSOR', [
 	"Left" => 2,
 	"Center" => 3,

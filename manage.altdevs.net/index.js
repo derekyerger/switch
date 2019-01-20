@@ -127,8 +127,19 @@ function setupPing(port) {
 }
 
 function delBond() {
-	doAjax('delbond', null);
-	$("#delBond").attr("data-original-title", "Bond successfully cleared").tooltip("show");
+	swal({
+		title: "Bluetooth Bonding",
+		text: "Are you sure you want to remove any associations to a paired device?",
+		type: "warning",
+		showCancelButton: true,
+		cancelButtonClass: "btn-lime",
+		closeOnConfirm: false},
+	function(x) {
+		if (x) {
+			retr("delbond");
+			ajaxRetFn = 'swal("Removed Bonding", "Any stored bonding information has been removed.", "success");';
+		}
+	});
 }
 
 function retr(cmd, data) {
@@ -348,7 +359,14 @@ function activateElt(p) {
 			$("#bluetooth label").removeClass("active");
 			$("#bluetooth input[value=" + decodeProg()['bluetooth'] + "]").parent().addClass("active");
 			$("#bluetooth input").on("change", function(e) {
-				retr("set", encodeId(e.target.name) + "," + e.target.value);
+				clearTimeout(spinHandle);
+				spinHandle = setTimeout(spinnerStart, 150); /* Only start spinner if we're taking too long */
+				$.post("/tweak.php", {pk: encodeId(e.target.name), value: e.target.value})
+					.done(function(rxObj) {
+						clearTimeout(spinHandle);
+						spinnerEnd();
+						swal("Interface switched", "The output interface has been changed to " + (e.target.value === "1" ? "Bluetooth" : "USB"), "success");
+				});
 			});
 			break;
 	}
