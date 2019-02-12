@@ -27,8 +27,6 @@ define Package/hciconf/install
 	$(CP) ./files/etc/* $(1)/etc
 	$(INSTALL_DIR) $(1)/www/
 	$(CP) ./files/www/* $(1)/www/
-	$(INSTALL_DIR) $(1)/etc/init.d
-	$(INSTALL_BIN) ./files/hciconf.init $(1)/etc/init.d/hciconf
 endef
 
 $(eval $(call BuildPackage,hciconf))

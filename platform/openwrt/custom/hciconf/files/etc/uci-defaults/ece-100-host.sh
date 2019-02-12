@@ -1,11 +1,15 @@
 #!/bin/ash
 
 # Set up AP defaults
-uci set wireless.default_radio0.ssid="ECE Team 30 HCI Controller"
+uci set wireless.default_radio0.ssid="Accessible Input Device $(xxd -p /dev/urandom|head -c8)"
 uci set wireless.default_radio0.encryption=psk2
 uci set wireless.default_radio0.key="oxymoronicdis"
 uci set wireless.default_radio0.disabled=0
 uci set wireless.radio0.disabled=0
+uci add_list dhcp.lan.option='3'
+uci add_list dhcp.lan.option='5'
+uci del dhcp.lan.dhcpv6
+uci del dhcp.lan.ra
 uci commit
 wifi
 
