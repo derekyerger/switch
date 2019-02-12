@@ -19,14 +19,14 @@
 
 void (*resetFunc) (void) = 0;
 
-const int MAGIC = 6; /* To detect if flash has been initialized */
+const int MAGIC = 19; /* To detect if flash has been initialized */
 const int STRBUF = 512;  /* Buffer size for programming string */
 const int SAMP = 50;    /* For array allocation */
 const int MAXSENS = 2;   /* For uarray allocation */
 
 #include "device.h"
 
-int tunables[] = { 2, 145, 125, 300, 1, 30, 0, 50, 20, 15, 1, 0, 100 };
+int tunables[] = { 2, 145, 125, 300, 1, 30, 0, 50, 20, 15, 1, 0, 40, 900 };
 
 /* Array mapped to legible pointer names */
 int *numSensors = &tunables[0];
@@ -42,6 +42,7 @@ int *minGrp = &tunables[9];
 int *enAdj = &tunables[10];
 int *toBLE = &tunables[11];
 int *rpiCutoff = &tunables[12];
+int *sleepDelay = &tunables[13];
 
 byte debugging = 0;
 char db[20];
@@ -55,6 +56,7 @@ int batlvl;
 long lastBat = -1;
 byte powerSaving = 0;
 long powerSavingTime = 0;
+long wifiSavingTime = 0;
 
 int adx = 0;
 boolean debug;
@@ -280,7 +282,7 @@ void loop() {
       impulseBuffer[s][impulseP[s]] = v;
       impulseP[s] = (impulseP[s] + 1) % *avgWin;
     } else if (analogRead(A5) < 650) {
-      if (millis() - powerSavingTime > 600000 ) {
+      if (millis() - powerSavingTime > *sleepDelay * 1000 ) {
         if (!powerSaving) setupLowPower();
         powerSaving = true;
         LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF); /* Save power */
@@ -395,8 +397,10 @@ skip:
     }
   }
 
-  digitalWrite(22, (analogRead(A5) >= 650)
-               || (batlvl > *rpiCutoff) ); /* RPi on if USB powered and battery above preset */
+  if (analogRead(A5) >= 650) {
+  	wifiSavingTime = millis();
+    digitalWrite(22, HIGH);
+  } else digitalWrite(22, (millis() - wifiSavingTime < *rpiCutoff * 1000));
 }
 
 /* ===== Averaging, calibration ===== */

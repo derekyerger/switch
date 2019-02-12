@@ -5,7 +5,7 @@ typedef struct {
   const char *desc;
 } TINFO;
 
-const byte TCMAX = 13;
+const byte TCMAX = 14;
 
 const char TDNAME0[] PROGMEM = "Sensor count";
 const char TDNAME1[] PROGMEM = "Hard press";
@@ -19,7 +19,8 @@ const char TDNAME8[] PROGMEM = "Pressure bias";
 const char TDNAME9[] PROGMEM = "Minimum group";
 const char TDNAME10[] PROGMEM = "Enable adjust";
 const char TDNAME11[] PROGMEM = "Bluetooth";
-const char TDNAME12[] PROGMEM = "Turn off WiFi at battery level";
+const char TDNAME12[] PROGMEM = "WiFi power off delay";
+const char TDNAME13[] PROGMEM = "Sleep delay";
 
 const char TDDESC0[] PROGMEM = "The number of sensors the device will read from";
 const char TDDESC1[] PROGMEM = "The pressure required to trigger a hard press";
@@ -33,7 +34,8 @@ const char TDDESC8[] PROGMEM = "During auto-calibration, keep soft and hard pres
 const char TDDESC9[] PROGMEM = "Minimum number of hard or soft presses required to auto-calibrate";
 const char TDDESC10[] PROGMEM = "Enable auto-calibration";
 const char TDDESC11[] PROGMEM = "Enable or disable bluetooth";
-const char TDDESC12[] PROGMEM = "What battery level is required for WiFi management";
+const char TDDESC12[] PROGMEM = "How many seconds to keep WiFi management on after switching to battery";
+const char TDDESC13[] PROGMEM = "How many seconds of inactivity should cause the device to sleep";
 
 const TINFO TDESC[TCMAX] PROGMEM = {
 	{ TDNAME0, 1, 2, TDDESC0 },
@@ -48,5 +50,6 @@ const TINFO TDESC[TCMAX] PROGMEM = {
 	{ TDNAME9, 5, 50, TDDESC9 },
 	{ TDNAME10, 0, 1, TDDESC10 },
 	{ TDNAME11, 0, 1, TDDESC11 },
-	{ TDNAME12, 0, 100, TDDESC12 },
+	{ TDNAME12, 0, 32000, TDDESC12 },
+	{ TDNAME13, 0, 32000, TDDESC13 },
 };
