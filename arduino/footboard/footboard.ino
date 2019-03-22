@@ -19,14 +19,14 @@
 
 void (*resetFunc) (void) = 0;
 
-const int MAGIC = 19; /* To detect if flash has been initialized */
+const int MAGIC = 21; /* To detect if flash has been initialized */
 const int STRBUF = 512;  /* Buffer size for programming string */
 const int SAMP = 50;    /* For array allocation */
 const int MAXSENS = 2;   /* For uarray allocation */
 
 #include "device.h"
 
-int tunables[] = { 2, 145, 125, 300, 1, 30, 0, 50, 20, 15, 1, 0, 40, 900 };
+int tunables[] = { 1, 145, 125, 300, 1, 30, 0, 50, 20, 15, 1, 0, 900, 900 };
 
 /* Array mapped to legible pointer names */
 int *numSensors = &tunables[0];
@@ -371,7 +371,7 @@ skip:
       case 18: /* Or just the id */
         Serial1.print(F("v1.1-"));
         for (int adx = 1007; adx < 1024; adx++) Serial1.write(EEPROM.read(adx));
-        if (val == 17) Serial1.print(F("-aid2-fd2aa0ff"));
+        if (val == 17) Serial1.print(F("-aid1-e9599daa"));
         Serial1.print("\n");
         break;
     }
@@ -400,7 +400,10 @@ skip:
   if (analogRead(A5) >= 650) {
   	wifiSavingTime = millis();
     digitalWrite(22, HIGH);
-  } else digitalWrite(22, (millis() - wifiSavingTime < *rpiCutoff * 1000));
+  } else {
+	unsigned long cutoff = (unsigned long) *rpiCutoff;
+  	digitalWrite(22, (millis() - wifiSavingTime < cutoff * 1000));
+  }
 }
 
 /* ===== Averaging, calibration ===== */

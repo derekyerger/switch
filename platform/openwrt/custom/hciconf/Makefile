@@ -25,8 +25,8 @@ endef
 define Package/hciconf/install
 	$(INSTALL_DIR) $(1)/etc
 	$(CP) ./files/etc/* $(1)/etc
-	$(INSTALL_DIR) $(1)/www/
-	$(CP) ./files/www/* $(1)/www/
+	$(INSTALL_DIR) $(1)/www/hciconf/
+	$(CP) ./files/www/hciconf/* $(1)/www/hciconf/
 endef
 
 $(eval $(call BuildPackage,hciconf))

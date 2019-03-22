@@ -5,12 +5,13 @@
 #include <WiFiManager.h>
 #include <WiFiClientSecure.h>
 
-const char* ssid = "ADI-Spoke-r6K2yw";
+const char* ssid = "ADI-Spoke-SjQid7";
 const char* password = "alternatedevs";
 
 const char* host = "api.altdevs.net";
 const int apiPort = 8943;
-const char* nodeId   = "r6K2ywLeEBEf7bvi";
+const char* nodeId  = "gTZ3sFg3UbZWVRZU";
+// :r !base64 /dev/urandom |head -c16
 
 extern const unsigned char caCert[] PROGMEM;
 extern const unsigned int caCertLen;
