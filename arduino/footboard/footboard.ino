@@ -23,6 +23,7 @@ const int MAGIC = 21; /* To detect if flash has been initialized */
 const int STRBUF = 512;  /* Buffer size for programming string */
 const int SAMP = 50;    /* For array allocation */
 const int MAXSENS = 2;   /* For uarray allocation */
+const int MONITORINTERVAL = 100;
 
 #include "device.h"
 
@@ -55,11 +56,13 @@ byte lastIf;
 int batlvl;
 long lastBat = -1;
 byte powerSaving = 0;
-long powerSavingTime = 0;
-long wifiSavingTime = 0;
+unsigned long powerSavingTime = 0;
+unsigned long wifiSavingTime = 0;
 
 int adx = 0;
 boolean debug;
+byte monitor;
+unsigned long monitorTime;
 byte impulse;
 byte sensorMask;
 byte readImpulse;
@@ -255,6 +258,12 @@ void loop() {
     if ((lastImpulse[s] != 0) && (v < *softP)) { /* Ending */
       sensorMask |= (1 << s);
       byte avg = avgS(s);
+      if (monitor) {
+        if (s == 0) Serial1.write( '@' );
+        if (s == 1) Serial1.write( '#' );
+        Serial1.print(avg, HEX);
+		Serial1.print('\n');
+      }
 
       if (millis() - lastImpulse[s] >= *longP) {
         impulse = 2;
@@ -266,6 +275,11 @@ void loop() {
       clearS(s);
       powerSavingTime = millis();
     } else if ((lastImpulse[s] == 0) && (v >= *softP)) { /* Starting */
+      if (monitor) {
+        if (s == 0) Serial1.write( '$' );
+        if (s == 1) Serial1.write( '%' );
+		Serial1.print('\n');
+      }
       impulse = 0;
       sensorMask = 0;
       lastImpulse[s] = millis();
@@ -292,6 +306,16 @@ void loop() {
       captureS1 = true; /* If waking up, ignore next */
       powerSaving = false;
     }
+    if (monitor && s == 0 && (millis() - monitorTime > MONITORINTERVAL)) monitor = 2;
+    if (monitor == 2) {
+      if (s == 0) Serial1.write( '!' );
+      Serial1.print(v, HEX);
+    }
+  }
+  if (monitor == 2) {
+    Serial1.print('\n');
+    monitorTime = millis();
+    monitor = 1;
   }
   delay(*sampleDelay);
 skip:
@@ -332,13 +356,6 @@ skip:
         Serial1.print("\n");
         break;
 
-      case 8: /* Get battery */
-        Serial1.print(batlvl);
-        Serial1.print("%");
-        if (analogRead(A5) > 650) Serial1.print(", charging");
-        Serial1.print("\n");
-        break;
-
       case 9: /* Get power source */
         Serial1.print(analogRead(A5));
         Serial1.print("\n");
@@ -374,6 +391,15 @@ skip:
         if (val == 17) Serial1.print(F("-aid1-e9599daa"));
         Serial1.print("\n");
         break;
+      
+	  case 19: /* Set monitor */
+        monitor = (byte) Serial1.readStringUntil('\n').toInt();
+        Serial1.print(*softP);
+        Serial1.print(",");
+        Serial1.print(*hardP);
+        Serial1.print("\n");
+        break;
+
     }
   }
 
@@ -548,9 +574,16 @@ void updateCalibration() {
     *softP = gCt[0].median - dta;
     if (*hardP - *softP < *biasP)
       *softP = *hardP - *biasP;
+	if (*softP < 1) *softP = 1;
     if (debugging) {
       sprintf(db, "%d,%d", *softP, *hardP);
       Serial1.print(db);
+    }
+    if (monitor) {
+      Serial1.write( '^' );
+      Serial1.print(*softP, HEX);
+      Serial1.print(*hardP, HEX);
+      Serial1.print('\n');
     }
   }
   if (debugging) Serial1.print("\n");

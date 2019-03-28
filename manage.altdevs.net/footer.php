@@ -23,6 +23,7 @@
 		<script src="js/excanvas.min.js"></script>
 	<![endif]-->
 	<script src="js/jquery.slimscroll.min.js"></script>
+	<script src="js/powerange.min.js"></script>
 	<script src="js/js.cookie.js"></script>
 	<script src="js/transparent.min.js"></script>
 	<script src="js/apps.min.js"></script>
@@ -39,6 +40,7 @@
 	<script src="js/bootstrap-editable.min.js"></script>
 	<script src="js/jquery.gritter.min.js"></script>
 	<script src="js/sweetalert.min.js"></script>
+	<script src="js/jquery.flot.min.js"></script>
 	
 	<script>
 		$(document).ready(function() {

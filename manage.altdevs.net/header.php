@@ -24,6 +24,7 @@
 	<!-- ================== END BASE CSS STYLE ================== -->
 	<link href="css/jquery.gritter.css" rel="stylesheet" />
 	<link href="css/sweetalert.css" rel="stylesheet" />
+	<link href="css/powerange.min.css" rel="stylesheet" />
 	
 	<!-- ================== BEGIN BASE JS ================== -->
 	<script src="js/pace.min.js"></script>

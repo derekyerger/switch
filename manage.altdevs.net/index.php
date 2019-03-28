@@ -101,5 +101,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 			else unset($p[$_POST['d']['name']]);
 			file_put_contents("profiles", json_encode($p));
 			break;
+		
+		case "stopMonitor":
+			$comm->txrxCmd(19, "0\n", 1000);
+			break;
 	}
 } ?>

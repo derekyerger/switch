@@ -151,7 +151,14 @@ function retr(cmd, data) {
 			clearTimeout(spinHandle);
 			spinnerEnd();
 
-			if (cmd == "page") unping();
+			if (cmd == "page") {
+				unping();
+				if (data != "Home.status" && (pressureSlider.length > 0 || pressureChart !== null)) {
+					retr("stopMonitor", null);
+					pressureSlider = [];
+					pressureChart = null;
+				}
+			}
 			
 			if (cmd == "get") {
 				
@@ -173,7 +180,7 @@ function retr(cmd, data) {
 					helpSeq(data - (data == 1 ? 0 : 1));
 				else if (rxObj[1] == 1) helpSeq(data + 1);
 				else {
-					doAjax("getHelp", data);
+					retr("getHelp", data);
 					clearTimeout(spinHandle);
 				}
 
@@ -192,36 +199,89 @@ function retr(cmd, data) {
 }
 
 var pingHandle = null;
+var pressureSlider = [];
+var pressureChart = null;
+var pressureCount = 0;
+var softP;
+var hardP;
+var doPlot;
 
-function ping(a) { /* Light up the visual */
-	if (a.substr(0,1) != ">") return;
-	a = a.substr(1);
-	if ($(".responsive-device").length) {
-		/* Visual exploding ping animation */
-		$(".responsive-device").append('<div id="ping' + ++pingCt + '" class="dot dot' + a[0] + '"></div>');
-		
-		/* Tooltip */
-		clearTimeout(pingHandle);
-		$(".dot").tooltip("hide");
-		$("#ping" + pingCt).attr('data-original-title', pMap[ a[1] ]).attr('data-trigger', 'manual').attr('data-placement', "bottom").attr('data-animation', 'true').tooltip("show");
-		
-		/* Remove after 3s */
-		pingHandle = setTimeout(unping, 3000);
-	}
-	
-	/* Update list of commands */
-	lastCmds.push(a);
-	if (lastCmds.length > 10) lastCmds.shift();
-	populateLastCmds();
-
-	if ($('.note h4:contains("Blank device detected")').parents('.note').hide(300).length) {
-		/* Welcome mode */
-		retr("component", "command-history");
-		setTimeout(function() {
-			$('.note h4:contains("Blank device detected")').parents('.note').remove();
+function ping(a) {
+	if (a.substr(0,1) == ">") { /* Light up the visual */
+		a = a.substr(1);
+		if ($(".responsive-device").length) {
+			/* Visual exploding ping animation */
+			$(".responsive-device").append('<div id="ping' + ++pingCt + '" class="dot dot' + a[0] + '"></div>');
+			
+			/* Tooltip */
+			clearTimeout(pingHandle);
+			$(".dot").tooltip("hide");
 			$("#ping" + pingCt).attr('data-original-title', pMap[ a[1] ]).attr('data-trigger', 'manual').attr('data-placement', "bottom").attr('data-animation', 'true').tooltip("show");
-			beginner = true;
-		}, 300);
+			
+			/* Remove after 3s */
+			pingHandle = setTimeout(unping, 3000);
+		}
+		
+		/* Update list of commands */
+		lastCmds.push(a);
+		if (lastCmds.length > 10) lastCmds.shift();
+		populateLastCmds();
+
+		if ($('.note h4:contains("Blank device detected")').parents('.note').hide(300).length) {
+			/* Welcome mode */
+			retr("component", "command-history");
+			setTimeout(function() {
+				$('.note h4:contains("Blank device detected")').parents('.note').remove();
+				$("#ping" + pingCt).attr('data-original-title', pMap[ a[1] ]).attr('data-trigger', 'manual').attr('data-placement', "bottom").attr('data-animation', 'true').tooltip("show");
+				beginner = true;
+			}, 300);
+		}
+	} else if (a.substr(0,1) == "!") { /* Display pressure */
+		if (pressureSlider.length > 0) {
+			pressureSlider[0].setStart(parseInt(a.substr(1,2), 16)/255*100);
+			if (a.length > 3) {
+				pressureSlider[1].setStart(parseInt(a.substr(3,2), 16)/255*100);
+				$('.slider-wrapper.blue').show();
+			}
+		} else if ((chart = $('#pressure-chart')).length == 1) {
+			if (pressureChart === null) {
+				if (a.length > 3) pressureChart = [
+					{ label: 'Left', color: COLOR_GREEN, lines: {show:true}, data: []  },
+					{ label: 'Left Peak', color: COLOR_GREEN, points: {show:true}, data: []  },
+					{ label: 'Right', color: COLOR_BLUE, lines: {show:true}, data: []  },
+					{ label: 'Right Peak', color: COLOR_BLUE, points: {show:true}, data: []  },
+				];
+				else pressureChart = [{ label: 'Sensor', color: COLOR_GREEN, data: []  }];
+			}
+			pressureChart[0]['data'].push([pressureCount, parseInt(a.substr(1,2), 16)])
+			if (pressureChart[0]['data'].length > 40) {
+				c = pressureChart[0]['data'].shift();
+				while (pressureChart[1]['data'].length > 0 && pressureChart[1]['data'][0][0] <= c[0]) pressureChart[1]['data'].shift()
+			}
+			if (a.length > 3) {
+				pressureChart[2]['data'].push([pressureCount, parseInt(a.substr(3,2), 16)])
+				if (pressureChart[2]['data'].length > 40) {
+					c = pressureChart[2]['data'].shift();
+					while (pressureChart[3]['data'].length > 0 && pressureChart[3]['data'][0][0] <= c[0]) pressureChart[3]['data'].shift()
+				}
+				
+			}
+			pressureCount++;
+			doPlot();
+		}
+	} else if (a.substr(0,1) == "@") { /* Impulse */
+		if ((chart = $('#pressure-chart')).length == 1) {
+			pressureChart[1]['data'].push([pressureCount, parseInt(a.substr(1,2), 16)])
+		}
+	} else if (a.substr(0,1) == "#") { /* Impulse */
+		if ((chart = $('#pressure-chart')).length == 1) {
+			pressureChart[3]['data'].push([pressureCount, parseInt(a.substr(1,2), 16)])
+		}
+	} else if (a.substr(0,1) == "^") { /* Adjust pressures */
+		if ((chart = $('#pressure-chart')).length == 1) {
+			softP = parseInt(a.substr(1,2), 16);
+			hardP = parseInt(a.substr(3,2), 16);
+		}
 	}
 
 }
@@ -624,7 +684,7 @@ function profileAdd() {
 		window.alert("Please enter a unique identifier");
 		return;
 	}
-	doAjax("saveProfile", { name: $("#profName").val(), data: programming });
+	retr("saveProfile", { name: $("#profName").val(), data: programming });
 	$("#profileSel").append('<a class="dropdown-item" href="javascript:void(0)" onclick="retr(\'getProfile\', \'' + $("#profName").val() + '\');">' + $("#profName").val() + '</a>');
 	ddSet("ddProfile", $("#profName").val());
 	$("#profName").val('');
@@ -633,7 +693,7 @@ function profileAdd() {
 function profileRemove() {
 	if ($("#ddProfile").html() == "Profile") return;
 	
-	doAjax("saveProfile", { name: $("#ddProfile").html(), data: "" });
+	retr("saveProfile", { name: $("#ddProfile").html(), data: "" });
 	$("#profileSel a:contains('" + $("#ddProfile").html() + "')").remove();
 	ddSet("ddProfile", "Profile");
 }
