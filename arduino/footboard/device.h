@@ -5,7 +5,7 @@ typedef struct {
   const char *desc;
 } TINFO;
 
-const byte TCMAX = 14;
+const byte TCMAX = 17;
 
 const char TDNAME0[] PROGMEM = "Sensor count";
 const char TDNAME1[] PROGMEM = "Hard press";
@@ -21,6 +21,9 @@ const char TDNAME10[] PROGMEM = "Enable adjust";
 const char TDNAME11[] PROGMEM = "Bluetooth";
 const char TDNAME12[] PROGMEM = "WiFi power off delay";
 const char TDNAME13[] PROGMEM = "Sleep delay";
+const char TDNAME14[] PROGMEM = "Baseline ratio";
+const char TDNAME15[] PROGMEM = "Load ratio";
+const char TDNAME16[] PROGMEM = "Load point";
 
 const char TDDESC0[] PROGMEM = "The number of sensors the device will read from";
 const char TDDESC1[] PROGMEM = "The pressure required to trigger a hard press";
@@ -36,6 +39,9 @@ const char TDDESC10[] PROGMEM = "Enable auto-calibration";
 const char TDDESC11[] PROGMEM = "Enable or disable bluetooth";
 const char TDDESC12[] PROGMEM = "How many seconds to keep WiFi management on after switching to battery";
 const char TDDESC13[] PROGMEM = "How many seconds of inactivity should cause the device to sleep";
+const char TDDESC14[] PROGMEM = "Sensor 1 vs 2 at baseline";
+const char TDDESC15[] PROGMEM = "Sensor 1 vs 2 under load";
+const char TDDESC16[] PROGMEM = "Load threshold";
 
 const TINFO TDESC[TCMAX] PROGMEM = {
 	{ TDNAME0, 1, 2, TDDESC0 },
@@ -52,4 +58,7 @@ const TINFO TDESC[TCMAX] PROGMEM = {
 	{ TDNAME11, 0, 1, TDDESC11 },
 	{ TDNAME12, 0, 32000, TDDESC12 },
 	{ TDNAME13, 0, 32000, TDDESC13 },
+	{ TDNAME14, 0, 32000, TDDESC14 },
+	{ TDNAME15, 0, 32000, TDDESC15 },
+	{ TDNAME16, 0, 255, TDDESC16 },
 };

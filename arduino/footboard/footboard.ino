@@ -19,7 +19,7 @@
 
 void (*resetFunc) (void) = 0;
 
-const int MAGIC = 21; /* To detect if flash has been initialized */
+const int MAGIC = 24; /* To detect if flash has been initialized */
 const int STRBUF = 512;  /* Buffer size for programming string */
 const int SAMP = 50;    /* For array allocation */
 const int MAXSENS = 2;   /* For uarray allocation */
@@ -27,7 +27,7 @@ const int MONITORINTERVAL = 100;
 
 #include "device.h"
 
-int tunables[] = { 1, 145, 125, 300, 1, 30, 0, 50, 20, 15, 1, 0, 900, 900 };
+int tunables[] = { 2, 90, 75, 300, 1, 30, 0, 50, 20, 15, 0, 0, 900, 900, 0, 0, 150 };
 
 /* Array mapped to legible pointer names */
 int *numSensors = &tunables[0];
@@ -44,6 +44,8 @@ int *enAdj = &tunables[10];
 int *toBLE = &tunables[11];
 int *rpiCutoff = &tunables[12];
 int *sleepDelay = &tunables[13];
+int *ratio[2] = { &tunables[14], &tunables[15] };
+int *loadPressure = &tunables[16];
 
 byte debugging = 0;
 char db[20];
@@ -176,7 +178,7 @@ void setup() {
   digitalWrite(6, HIGH);
   digitalWrite(12, HIGH);
   digitalWrite(22, HIGH);
-  Serial1.begin(9600); /* Side channel control */
+  Serial1.begin(115200); /* Side channel control */
   adx = 0;
   val = (EEPROM.read(adx) << 8) + EEPROM.read(adx + 1);
   ble.begin(0);
@@ -227,6 +229,7 @@ void setup() {
 }
 
 void loop() {
+  int sp;
   if (readImpulse > 1) readImpulse--;
   if (readImpulse == 1) { /* This takes action after release */
     readImpulse = 0;
@@ -255,14 +258,16 @@ void loop() {
   }
   for (byte s = 0; s < *numSensors; s++) { /* Main sensing */
     byte v = analogRead(s) >> 2;
+
     if ((lastImpulse[s] != 0) && (v < *softP)) { /* Ending */
       sensorMask |= (1 << s);
       byte avg = avgS(s);
       if (monitor) {
         if (s == 0) Serial1.write( '@' );
         if (s == 1) Serial1.write( '#' );
+        if (avg < 16) Serial1.print('0');
         Serial1.print(avg, HEX);
-		Serial1.print('\n');
+        Serial1.print('\n');
       }
 
       if (millis() - lastImpulse[s] >= *longP) {
@@ -278,7 +283,7 @@ void loop() {
       if (monitor) {
         if (s == 0) Serial1.write( '$' );
         if (s == 1) Serial1.write( '%' );
-		Serial1.print('\n');
+        Serial1.print('\n');
       }
       impulse = 0;
       sensorMask = 0;
@@ -309,6 +314,7 @@ void loop() {
     if (monitor && s == 0 && (millis() - monitorTime > MONITORINTERVAL)) monitor = 2;
     if (monitor == 2) {
       if (s == 0) Serial1.write( '!' );
+      if (v < 16) Serial1.print('0');
       Serial1.print(v, HEX);
     }
   }
@@ -324,7 +330,6 @@ skip:
     switch (val) {
       case 1: /* Read state */
         delay(100);
-        int sp;
         for (sp = 0; sp < (sizeof(tunables) / sizeof(int)); sp++) {
           Serial1.print(tunables[sp]);
           Serial1.print(",");
@@ -388,11 +393,11 @@ skip:
       case 18: /* Or just the id */
         Serial1.print(F("v1.1-"));
         for (int adx = 1007; adx < 1024; adx++) Serial1.write(EEPROM.read(adx));
-        if (val == 17) Serial1.print(F("-aid1-e9599daa"));
+        if (val == 17) Serial1.print(F("-aid2-e9599daa"));
         Serial1.print("\n");
         break;
       
-	  case 19: /* Set monitor */
+      case 19: /* Set monitor */
         monitor = (byte) Serial1.readStringUntil('\n').toInt();
         Serial1.print(*softP);
         Serial1.print(",");
@@ -400,6 +405,39 @@ skip:
         Serial1.print("\n");
         break;
 
+      case 20: /* Collect baseline */
+        for (sp = 0; sp < SAMP; sp++) {
+          for (byte s = 0; s < *numSensors; s++) impulseBuffer[s][sp] = analogRead(s) >> 2;
+          delay(10);
+        }
+        
+        float nf = avgS(0);
+        clearS(0);
+
+        nf /= (float) avgS(1);
+        clearS(1);
+
+        nf *= 10000;
+        *ratio[0] = (int) nf;
+        while ((analogRead(0) >> 2) < *loadPressure) delay(10);
+        for (sp = 0; sp < SAMP; sp++) {
+          for (byte s = 0; s < *numSensors; s++) impulseBuffer[s][sp] = analogRead(s) >> 2;
+          delay(10);
+        }
+        
+        nf = avgS(0);
+        clearS(0);
+
+        nf /= (float) avgS(1);
+        clearS(1);
+
+        nf *= 10000;
+        *ratio[1] = (int) nf;
+        Serial1.print(*ratio[0]);
+        Serial1.print(',');
+        Serial1.print(*ratio[1]);
+        Serial1.print('\n');
+        break;
     }
   }
 
@@ -424,11 +462,11 @@ skip:
   }
 
   if (analogRead(A5) >= 650) {
-  	wifiSavingTime = millis();
+      wifiSavingTime = millis();
     digitalWrite(22, HIGH);
   } else {
-	unsigned long cutoff = (unsigned long) *rpiCutoff;
-  	digitalWrite(22, (millis() - wifiSavingTime < cutoff * 1000));
+    unsigned long cutoff = (unsigned long) *rpiCutoff;
+      digitalWrite(22, (millis() - wifiSavingTime < cutoff * 1000));
   }
 }
 
@@ -574,7 +612,7 @@ void updateCalibration() {
     *softP = gCt[0].median - dta;
     if (*hardP - *softP < *biasP)
       *softP = *hardP - *biasP;
-	if (*softP < 1) *softP = 1;
+    if (*softP < 1) *softP = 1;
     if (debugging) {
       sprintf(db, "%d,%d", *softP, *hardP);
       Serial1.print(db);

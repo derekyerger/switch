@@ -1,4 +1,9 @@
 #!/bin/bash
+# Th following is a WebSockets receiver intended to terminate IoT nodes connecting to an
+# haproxy TLS frontend. The incoming clients are connected to the php daemon ws/ttyws.php,
+# which accepts websockets connections on a port taken from a pool of 99 and communicated
+# to the web application via file.
+
 # Individual client receiver. Spawned by socat in the server script.
 
 echo "$(date) New connection from $SOCAT_PEERADDR:$SOCAT_PEERPORT" | logger -t adNodes
