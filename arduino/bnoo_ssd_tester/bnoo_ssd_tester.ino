@@ -1,21 +1,48 @@
 #include <SPI.h>
 #include <Wire.h>
+
+#define USE_DISPLAY
+
+#ifdef USE_DISPLAY
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
+#endif
+
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BNO055.h>
 #include <utility/imumaths.h>
+#include <EEPROM.h>
+#include <Keyboard.h>
 
+const int MAGIC = 25395; /* To detect if flash has been initialized */
+const int STRBUF = 128;  /* Buffer size for programming string */
+const int MENUFIXED = 4; /* Where to start counting tunable entries */
+
+const char *tunablesDesc[] = { "Linear soft motion",
+                               "Linear hard motion",
+                               "Angular soft motion",
+                               "Angular hard motion",
+                               "Angular stability threshold",
+                               "Sample interval (ms)",
+                               "Stable time (ms)" };
+int tunables[] = { 2, 4, 50, 100, 25, 100, 1000 };
+
+int *linSoft = &tunables[0];
+int *linHard = &tunables[1];
+int *angSoft = &tunables[2];
+int *angHard = &tunables[3];
+int *stable = &tunables[4];
+int *samp = &tunables[5];
+int *stableTime = &tunables[6];
+
+
+#ifdef USE_DISPLAY
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
-
 #define OLED_RESET     4 // Reset pin # (or -1 if sharing Arduino reset pin)
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
-
 #define DISPVCC        13          // OLED power
-
-/* Set the delay between fresh samples */
-uint16_t BNO055_SAMPLERATE_DELAY_MS = 100;
+#endif
 
 Adafruit_BNO055 bno = Adafruit_BNO055(55);
 
@@ -23,6 +50,7 @@ byte lastMode = 1;
 
 
 void displayPowerOn() {
+#ifdef USE_DISPLAY
   if (lastMode == 1) {
     digitalWrite(DISPVCC,LOW);
     display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
@@ -32,26 +60,78 @@ void displayPowerOn() {
     display.setCursor(0,0);
     display.display();
   }
+#endif
   lastMode = 0;
 }
 
 void displayPowerOff() {
+#ifdef USE_DISPLAY
   digitalWrite(DISPVCC,HIGH);
   display.clearDisplay();
   display.display();
+#endif
   lastMode = 0;
 }
 
+char pString[STRBUF] = ""; /* Memory buffer for programming string */
+char nOp[3] = ";;";  /* No operation. Returned from fetchImpulse() if
+                        no string is found for the desired trigger */
+
+int val;
+int adx = 0;
+int programming;
+boolean debug;
+
+/* Function prototypes */
+void printMenu();
+void purge();
+int prompt();
+char* fetchImpulse(int sensor, int impulse);
+void parseCmd(char* hidSequence);
+
+void saveValues() { /* Write all tunables to EEPROM */
+  int adx = 2;
+  int sp;
+  for (sp = 0; sp < (sizeof(tunables)/sizeof(int)); sp++) {
+    EEPROM.update(adx, tunables[sp] >> 8);
+    EEPROM.update(adx+1, tunables[sp]); adx += 2;
+  }
+  sp = 0;
+  while (pString[sp] != 0) EEPROM.update(adx++, pString[sp++]);
+  EEPROM.update(adx++, 0);
+}
 
 void setup(void) {
+  programming = 99;
   Serial.begin(115200);
-  Serial.println("Orientation Sensor Test"); Serial.println("");
+  
+  while (!Serial) { ; }
+  adx = 0;
+  val = (EEPROM.read(adx) << 8) + EEPROM.read(adx+1);
+  if (val != MAGIC) {
+    Serial.println(F("First run on this chip. Values will be initialized."));
+    EEPROM.update(adx, MAGIC >> 8); EEPROM.update(adx+1, MAGIC);
+    saveValues();
+  } else {
+    int sp;
+    adx += 2;
+    for (sp = 0; sp < (sizeof(tunables)/sizeof(int)); sp++) {
+      tunables[sp] = (EEPROM.read(adx) << 8) + EEPROM.read(adx+1);
+      adx += 2;
+    }
+
+    sp = 0;
+    while ((pString[sp++] = EEPROM.read(adx++)) != 0) { ; }
+    Serial.println(F("Stored values have been loaded."));
+    Serial.println(sp);
+  }
+  Serial.setTimeout(60000);
 
   /* Initialise the sensor */
   if (!bno.begin())
   {
     /* There was a problem detecting the BNO055 ... check your connections */
-    Serial.print("Ooops, no BNO055 detected ... Check your wiring or I2C ADDR!");
+    Serial.print(F("Ooops, no BNO055 detected ... Check your wiring or I2C ADDR!"));
     while (1);
   }
   
@@ -60,81 +140,148 @@ void setup(void) {
 
 }
 
-#define thresh1 2
-#define thresh2 4
-#define thresh3 50
-#define thresh4 100
-#define thresh5 25
-
 unsigned long lastMovement;
-unsigned long minStableTime = 500;
+
+void printEvent(sensors_event_t* event, Print& pobj);
 
 void loop(void) {
   sensors_event_t orientationData , angVelocityData , linearAccelData;
   bno.getEvent(&orientationData, Adafruit_BNO055::VECTOR_EULER);
   bno.getEvent(&angVelocityData, Adafruit_BNO055::VECTOR_GYROSCOPE);
   bno.getEvent(&linearAccelData, Adafruit_BNO055::VECTOR_LINEARACCEL);
+  if (programming >= 0) { /* Menu mode */
+    switch (programming) {
+      case 99:
+        purge();
+        printMenu();
+        while (Serial.available() == 0) { 
+          Serial.print(orientationData.orientation.x);
+          Serial.print(' ');
+          Serial.print(orientationData.orientation.y);
+          Serial.print(' ');
+          Serial.print(orientationData.orientation.z);
+          Serial.print(' ');
+          Serial.print("   \r ");
+          delay(*samp);
+          bno.getEvent(&orientationData, Adafruit_BNO055::VECTOR_EULER);
+          bno.getEvent(&angVelocityData, Adafruit_BNO055::VECTOR_GYROSCOPE);
+          bno.getEvent(&linearAccelData, Adafruit_BNO055::VECTOR_LINEARACCEL);
+        }
+        val = Serial.read() - 48;
+        if ((val < 1) || (val > (MENUFIXED+sizeof(tunables)/sizeof(int)))) {
+          Serial.println(F("\r\n Invalid choice."));
+          delay(1000);
+          printMenu();
+        } else programming = val;
+        break;
+        
+      case 1:
+        purge();
+        Serial.print(F("\r\n The current string is: "));
+        Serial.println(pString);
+        Serial.print(F("\r\n Enter a new string: "));
+        Serial.readStringUntil('\r').toCharArray(pString, STRBUF);
+        programming = 99;
+        break;
+        
+      case 2:
+        saveValues();
+        Serial.print(F("\033[2J\033[0;0H"));
+        Keyboard.begin();
+        programming = -1;
+        debug = false;
+        break;
+        
+      case 3:
+        Serial.println(F("\r\n Press any key to return to the menu."));
+        programming = -1;
+        debug = true;
+        break;
 
-  char axis = ' ';
-  byte impulse = 0;
+      default:
+        purge();
+        Serial.print(F("\r\n Enter new value for '"));
+        Serial.print(tunablesDesc[programming-MENUFIXED]);
+        Serial.print(F("': "));
+        tunables[programming-MENUFIXED] = prompt();
+        programming = 99;
+        break;      
+    }
+  } else { /* Runtime/sensing mode */
 
-  /* First priority: angular accel
-   * Don't allow a judgment to be made if we're moving about */
+    char axis = ' ';
+    byte impulse = 0;
 
-  if (abs(angVelocityData.gyro.x) > thresh3) axis = 'A' + (angVelocityData.gyro.x < 0) * 32;
-  if (abs(angVelocityData.gyro.x) > thresh4) impulse = 1;
+    /* First priority: angular accel
+     * Don't allow a judgment to be made if we're moving about */
+    if (abs(angVelocityData.gyro.x) > *angSoft) axis = 'A' + (angVelocityData.gyro.x < 0) * 32;
+    if (abs(angVelocityData.gyro.x) > *angHard) impulse = 1;
 
-  if (abs(angVelocityData.gyro.y) > thresh3) axis = 'B' + (angVelocityData.gyro.y < 0) * 32;
-  if (abs(angVelocityData.gyro.y) > thresh4) impulse = 1;
+    if (abs(angVelocityData.gyro.y) > *angSoft) axis = 'B' + (angVelocityData.gyro.y < 0) * 32;
+    if (abs(angVelocityData.gyro.y) > *angHard) impulse = 1;
 
-  if (abs(angVelocityData.gyro.z) > thresh3) axis = 'C' + (angVelocityData.gyro.z < 0) * 32;
-  if (abs(angVelocityData.gyro.z) > thresh4) impulse = 1;
+    if (abs(angVelocityData.gyro.z) > *angSoft) axis = 'C' + (angVelocityData.gyro.z < 0) * 32;
+    if (abs(angVelocityData.gyro.z) > *angHard) impulse = 1;
 
-  if (axis == ' ') { /* Second priority: linear accel */
-    if (abs(linearAccelData.acceleration.x) > thresh1) axis = 'X' + (linearAccelData.acceleration.x < 0) * 32;
-    if (abs(linearAccelData.acceleration.x) > thresh2) impulse = 1;
-  
-    if (abs(linearAccelData.acceleration.y) > thresh1) axis = 'Y' + (linearAccelData.acceleration.y < 0) * 32;
-    if (abs(linearAccelData.acceleration.y) > thresh2) impulse = 1;
-  
-    if (abs(linearAccelData.acceleration.z) > thresh1) axis = 'Z' + (linearAccelData.acceleration.z < 0) * 32;
-    if (abs(linearAccelData.acceleration.z) > thresh2) impulse = 1;
+    if (axis == ' ') { /* Second priority: linear accel */
+      if (abs(linearAccelData.acceleration.x) > *linSoft) axis = 'X' + (linearAccelData.acceleration.x < 0) * 32;
+      if (abs(linearAccelData.acceleration.x) > *linHard) impulse = 1;
+    
+      if (abs(linearAccelData.acceleration.y) > *linSoft) axis = 'Y' + (linearAccelData.acceleration.y < 0) * 32;
+      if (abs(linearAccelData.acceleration.y) > *linHard) impulse = 1;
+    
+      if (abs(linearAccelData.acceleration.z) > *linSoft) axis = 'Z' + (linearAccelData.acceleration.z < 0) * 32;
+      if (abs(linearAccelData.acceleration.z) > *linHard) impulse = 1;
+    }
+
+    if (axis != ' ' && (millis() - lastMovement) > *stableTime) {
+      Serial.println();
+      Serial.print(F("Event: "));
+      Serial.print(axis);
+      Serial.println(impulse);
+      printEvent(&orientationData, Serial);
+      printEvent(&angVelocityData, Serial);
+      printEvent(&linearAccelData, Serial);
+#ifdef USE_DISPLAY
+      display.clearDisplay();
+      display.setCursor(0,0);
+      display.print(F("Event: "));
+      display.print(axis);
+      display.println(impulse);
+      display.println();
+      printEvent(&orientationData, display);
+      printEvent(&angVelocityData, display);
+      printEvent(&linearAccelData, display);
+      display.display();
+#endif
+    } else {
+#ifdef USE_DISPLAY
+      for (int y = 8; y < 24; y++)
+        display.drawFastHLine(0, y, 128, 0);
+      display.setCursor(0,8);
+      if (millis() - lastMovement > *stableTime) {
+        display.print("stable for ");
+        display.print(millis() - lastMovement);
+        display.println("ms");
+      } else display.setCursor(0,16);
+      printEvent(&orientationData, display);
+      display.display();  
+#endif
+    }
+
+    if ((abs(angVelocityData.gyro.x)
+      + abs(angVelocityData.gyro.y)
+      + abs(angVelocityData.gyro.z)) > *stable) {
+      lastMovement = millis();
+    }
+    
+    delay(*samp);
+    if (Serial.available() > 0) { /* Break to menu on input */
+      Keyboard.releaseAll();
+      Keyboard.end();
+      programming = 99;
+    }
   }
-
-  if (axis != ' ' && (millis() - lastMovement) > minStableTime) {
-    Serial.print("---");
-    Serial.println(millis() - lastMovement);
-    display.clearDisplay();
-    display.setCursor(0,0);
-    display.print("Event: ");
-    display.print(axis);
-    display.println(impulse);
-    display.println();
-    printEvent(&orientationData, display);
-    printEvent(&angVelocityData, display);
-    printEvent(&linearAccelData, display);
-    display.display();
-  } else {
-    for (int y = 8; y < 24; y++)
-      display.drawFastHLine(0, y, 128, 0);
-    display.setCursor(0,8);
-    if (millis() - lastMovement > minStableTime) {
-      display.print("stable for ");
-      display.print(millis() - lastMovement);
-      display.println("ms");
-    } else display.setCursor(0,16);
-    printEvent(&orientationData, display);
-    display.display();  
-  }
-
-  if ((abs(angVelocityData.gyro.x)
-    + abs(angVelocityData.gyro.y)
-    + abs(angVelocityData.gyro.z)) > thresh5) {
-    lastMovement = millis();
-    Serial.println(lastMovement);
-  }
-  
-  delay(BNO055_SAMPLERATE_DELAY_MS);
 }
 
 void printEvent(sensors_event_t* event, Print& pobj) {
@@ -167,4 +314,116 @@ void printEvent(sensors_event_t* event, Print& pobj) {
   pobj.println(z);
 }
 
+void printMenu() {
+  Serial.println(F("\033[2J\033[0;0H"));
+  Serial.println(F(" \033[1m1.\033[0m Enter programming code"));
+  Serial.println(F(" \033[1m2.\033[0m Save values and run"));
+  Serial.println(F(" \033[1m3.\033[0m Enter debug mode\r\n")); 
+  Serial.println(F(" \033[1mTunable items:\033[0m")); 
+  int ch = MENUFIXED;
+  int sp;
+  for (sp = 0; sp < (sizeof(tunables)/sizeof(int)); sp++) {
+    Serial.print(" \033[1m");
+    Serial.write((ch++) + 48);
+    Serial.print(".\033[0m ");
+    Serial.print(tunablesDesc[sp]);
+    Serial.print(" = ");
+    Serial.println(tunables[sp]);
+  }
+  Serial.print("\n Enter a choice: \r\n\r\n");
+}
+
+void purge() {
+  while (Serial.available() > 0)
+    int val = Serial.read();
+}
+
+int prompt() {
+  purge();
+  Serial.print(F("\r\n Enter a new value: "));
+  return Serial.parseInt();
+}
+
+char* fetchImpulse(int sensorMask, int impulse) { /* Get substring */
+  int sp = 0;
+  int mo = 0;
+  char* cc = pString;
+  do {
+    switch (mo) {
+      case 0:
+        mo++;
+        if (*cc - 48 != sensorMask) mo = 9;
+        break;
+      
+      case 1:
+        mo++;
+        if (*cc - 48 != impulse) mo = 9;
+        break;
+        
+      case 2:
+        return cc;
+        break;
+      
+      default:
+        if (*cc == ';') mo = 0;
+        break;
+    }
+  } while (*(++cc) != 0);
+  return nOp;
+}
+
+void parseCmd(char* hidSequence) { /* Translate to keystrokes */
+  do {
+    switch (*hidSequence) {
+      /* Modifiers */
+      case '^':
+        Keyboard.press(KEY_LEFT_CTRL);
+        break;
+      case '+':
+        Keyboard.press(KEY_LEFT_SHIFT);
+        break;
+      case '%':
+        Keyboard.press(KEY_LEFT_ALT);
+        break;
+      case '&':
+        Keyboard.press(KEY_LEFT_GUI);
+        break;
+      case '|':
+        Keyboard.press(KEY_RETURN);
+        break;
+      case '~':
+        Keyboard.press(KEY_ESC);
+        break;
+      case '_':
+        Keyboard.press(KEY_BACKSPACE);
+        break;
+      case '!':
+        Keyboard.press(KEY_TAB);
+        break;
+      
+      /* Special functions: exit */
+      case '`':
+        Keyboard.releaseAll();
+        Keyboard.end();
+        setup();
+        break;
+      case ';':
+        break;
+
+      /* Escaped chars and regular chars */
+      case '\\':
+        Keyboard.press(*(++hidSequence));
+        Keyboard.releaseAll();
+        break;
+      default:
+        int modify = 0;
+        if ((*hidSequence >= 65) && (*hidSequence <= 90)) modify = 128;
+        Keyboard.press(*hidSequence + modify);
+        Keyboard.releaseAll();
+        break;
+    }
+    delay(5);
+  } while (*(++hidSequence) != ';'); 
+  Keyboard.releaseAll();
+}
 
