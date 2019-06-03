@@ -6,6 +6,7 @@
 #ifdef USE_DISPLAY
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
+#include "altdevslogo.h"
 #endif
 
 #include <Adafruit_Sensor.h>
@@ -14,26 +15,28 @@
 #include <EEPROM.h>
 #include <Keyboard.h>
 
-const int MAGIC = 25395; /* To detect if flash has been initialized */
-const int STRBUF = 128;  /* Buffer size for programming string */
+const int MAGIC = 25396; /* To detect if flash has been initialized */
+const int STRBUF = 48;  /* Buffer size for programming string */
 const int MENUFIXED = 4; /* Where to start counting tunable entries */
 
 const char *tunablesDesc[] = { "Linear soft motion",
                                "Linear hard motion",
                                "Angular soft motion",
                                "Angular hard motion",
+                               "Linear stability threshold percent",
                                "Angular stability threshold",
                                "Sample interval (ms)",
                                "Stable time (ms)" };
-int tunables[] = { 2, 4, 50, 100, 25, 100, 1000 };
+int tunables[] = { 2, 4, 50, 100, 25, 25, 100, 1000 };
 
 int *linSoft = &tunables[0];
 int *linHard = &tunables[1];
 int *angSoft = &tunables[2];
 int *angHard = &tunables[3];
 int *stable = &tunables[4];
-int *samp = &tunables[5];
-int *stableTime = &tunables[6];
+int *stable2 = &tunables[5];
+int *samp = &tunables[6];
+int *stableTime = &tunables[7];
 
 
 #ifdef USE_DISPLAY
@@ -55,9 +58,14 @@ void displayPowerOn() {
     digitalWrite(DISPVCC,LOW);
     display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
     display.clearDisplay();
+    display.drawBitmap(
+      (display.width()  - LOGO_WIDTH ) / 2,
+      16,
+      logo_bmp, LOGO_WIDTH, LOGO_HEIGHT, 1);
     display.setTextSize(1);
     display.setTextColor(WHITE);
-    display.setCursor(0,0);
+    display.setCursor(14,3);
+    display.print(F("Alternate Devices"));
     display.display();
   }
 #endif
@@ -104,6 +112,7 @@ void saveValues() { /* Write all tunables to EEPROM */
 void setup(void) {
   programming = 99;
   Serial.begin(115200);
+  displayPowerOn();
   
   while (!Serial) { ; }
   adx = 0;
@@ -135,7 +144,6 @@ void setup(void) {
     while (1);
   }
   
-  displayPowerOn();
   delay(1000);
 
 }
@@ -143,6 +151,39 @@ void setup(void) {
 unsigned long lastMovement;
 
 void printEvent(sensors_event_t* event, Print& pobj);
+
+void compIMU(char* axis, byte* impulse, int* soft, int* hard, char eval, float val) {
+  static float m;
+  if (val == -1) {
+    m = 0;
+    return;
+  }
+
+  if (abs(val) > *soft && abs(val) > m) {
+    *axis = eval + (val < 0) * 32;
+    m = abs(val);
+  }
+
+  if (abs(val) > *hard) *impulse = 1;
+
+}
+
+void getIMUevent(char* axis, byte* impulse, sensors_event_t* linear, sensors_event_t* angular) {
+    
+  /* First priority: angular accel. Prioritize the greatest magnitude */
+  compIMU(NULL, NULL, NULL, NULL, NULL, -1);
+  compIMU(axis, impulse, angSoft, angHard, 'A', angular->gyro.x);
+  compIMU(axis, impulse, angSoft, angHard, 'B', angular->gyro.y);
+  compIMU(axis, impulse, angSoft, angHard, 'C', angular->gyro.z);
+
+  if (*axis == ' ') { /* Second priority: linear accel */
+    compIMU(NULL, NULL, NULL, NULL, NULL, -1);
+    compIMU(axis, impulse, linSoft, linHard, 'X', linear->acceleration.x);
+    compIMU(axis, impulse, linSoft, linHard, 'Y', linear->acceleration.y);
+    compIMU(axis, impulse, linSoft, linHard, 'Z', linear->acceleration.z);
+  }
+
+}
 
 void loop(void) {
   sensors_event_t orientationData , angVelocityData , linearAccelData;
@@ -212,28 +253,9 @@ void loop(void) {
     char axis = ' ';
     byte impulse = 0;
 
-    /* First priority: angular accel
-     * Don't allow a judgment to be made if we're moving about */
-    if (abs(angVelocityData.gyro.x) > *angSoft) axis = 'A' + (angVelocityData.gyro.x < 0) * 32;
-    if (abs(angVelocityData.gyro.x) > *angHard) impulse = 1;
+    getIMUevent(&axis, &impulse, &linearAccelData, &angVelocityData);
 
-    if (abs(angVelocityData.gyro.y) > *angSoft) axis = 'B' + (angVelocityData.gyro.y < 0) * 32;
-    if (abs(angVelocityData.gyro.y) > *angHard) impulse = 1;
-
-    if (abs(angVelocityData.gyro.z) > *angSoft) axis = 'C' + (angVelocityData.gyro.z < 0) * 32;
-    if (abs(angVelocityData.gyro.z) > *angHard) impulse = 1;
-
-    if (axis == ' ') { /* Second priority: linear accel */
-      if (abs(linearAccelData.acceleration.x) > *linSoft) axis = 'X' + (linearAccelData.acceleration.x < 0) * 32;
-      if (abs(linearAccelData.acceleration.x) > *linHard) impulse = 1;
-    
-      if (abs(linearAccelData.acceleration.y) > *linSoft) axis = 'Y' + (linearAccelData.acceleration.y < 0) * 32;
-      if (abs(linearAccelData.acceleration.y) > *linHard) impulse = 1;
-    
-      if (abs(linearAccelData.acceleration.z) > *linSoft) axis = 'Z' + (linearAccelData.acceleration.z < 0) * 32;
-      if (abs(linearAccelData.acceleration.z) > *linHard) impulse = 1;
-    }
-
+    /* Don't allow a judgment to be made if we're moving about */
     if (axis != ' ' && (millis() - lastMovement) > *stableTime) {
       Serial.println();
       Serial.print(F("Event: "));
@@ -269,9 +291,15 @@ void loop(void) {
 #endif
     }
 
+    if ((abs(linearAccelData.acceleration.x)
+      + abs(linearAccelData.acceleration.y)
+      + abs(linearAccelData.acceleration.z))*100 > *stable) {
+      lastMovement = millis();
+    }
+    
     if ((abs(angVelocityData.gyro.x)
       + abs(angVelocityData.gyro.y)
-      + abs(angVelocityData.gyro.z)) > *stable) {
+      + abs(angVelocityData.gyro.z)) > *stable2) {
       lastMovement = millis();
     }
     
