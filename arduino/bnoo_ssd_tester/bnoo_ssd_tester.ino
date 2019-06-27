@@ -110,11 +110,11 @@ void saveValues() { /* Write all tunables to EEPROM */
 }
 
 void setup(void) {
-  programming = 99;
+  programming = 3;
   Serial.begin(115200);
   displayPowerOn();
   
-  while (!Serial) { ; }
+  //while (!Serial) { ; }
   adx = 0;
   val = (EEPROM.read(adx) << 8) + EEPROM.read(adx+1);
   if (val != MAGIC) {
@@ -144,7 +144,9 @@ void setup(void) {
     while (1);
   }
   
-  delay(1000);
+  delay(3000);
+  display.clearDisplay();
+  display.display();
 
 }
 
