@@ -20,7 +20,7 @@
 void (*resetFunc) (void) = 0;
 
 #define  DEV_MODEL       F("aid2")
-#define  GIT_HASH        F("e080918a~")
+#define  GIT_HASH        F("59cf7838~")
 
 #define  MAGIC           25  /* To detect if flash has been initialized */
 #define  STRBUF          512 /* Buffer size for programming string */
@@ -174,6 +174,7 @@ void setupLowPower() {
   ble.sendCommandCheckOK("AT+GAPDISCONNECT");
   ble.sendCommandCheckOK("AT+GAPSTOPADV");
   digitalWrite(22, LOW);
+  USBCON = 0;
 }
 
 void teardownLowPower() {
@@ -317,8 +318,7 @@ void loop() {
     } else if (analogRead(A5) < BATTPOWER) {
       if (!batteryPower) {
         batteryPower = 1;
-        Serial1.print("B\n");
-        Serial1.println(analogRead(A5));
+        Serial1.print("P\n");
       }
       if (millis() - powerSavingTime > (unsigned long) *sleepDelay * 1000 ) {
         if (!powerSaving) setupLowPower();
@@ -331,8 +331,7 @@ void loop() {
       teardownLowPower();
     } else if (batteryPower) {
       batteryPower = 0;
-      Serial1.print("b\n");
-      Serial1.println(analogRead(A5));
+      Serial1.print("p\n");
     }
     if (monitor && s == 0 && (millis() - monitorTime > MONITORINTERVAL)) monitor = 2;
     if (monitor == 2) {

@@ -282,6 +282,26 @@ function ping(a) {
 			softP = parseInt(a.substr(1,2), 16);
 			hardP = parseInt(a.substr(3,2), 16);
 		}
+	} else if (a == "Z") {
+		swal("Sleep", "The device has gone to sleep. Press and hold it for 8 seconds to wake up.", "warning");
+	} else if (a == "P") {
+		$('.gritter-item-wrapper').remove();
+		$.gritter.add({
+			title: 'Running on battery',
+			text: 'The device is now running on battery, and will go to sleep after a period of inactivity.',
+			image: 'img/battery.png',
+			sticky: false,
+			time: ''
+		});
+	} else if (a == "p") {
+		$('.gritter-item-wrapper').remove();
+		$.gritter.add({
+			title: 'Charging',
+			text: 'The device is now externally powered, and the battery is charging.',
+			image: 'img/charging.png',
+			sticky: false,
+			time: ''
+		});
 	}
 
 }

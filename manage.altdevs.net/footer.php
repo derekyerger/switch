@@ -61,6 +61,8 @@
 				"/img/web.jpg",
 				"/img/office.jpg",
 				"/img/keyboard.png",
+				"/img/charging.png",
+				"/img/battery.png",
 			)	
 		});
 	</script>
