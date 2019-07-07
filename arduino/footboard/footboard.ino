@@ -19,15 +19,19 @@
 
 void (*resetFunc) (void) = 0;
 
-const int MAGIC = 24; /* To detect if flash has been initialized */
-const int STRBUF = 512;  /* Buffer size for programming string */
-const int SAMP = 50;    /* For array allocation */
-const int MAXSENS = 2;   /* For uarray allocation */
-const int MONITORINTERVAL = 100;
+#define  DEV_MODEL       F("aid2")
+#define  GIT_HASH        F("e080918a~")
+
+#define  MAGIC           25  /* To detect if flash has been initialized */
+#define  STRBUF          512 /* Buffer size for programming string */
+#define  SAMP            50  /* For array allocation */
+#define  MAXSENS         2   /* For uarray allocation */
+#define  MONITORINTERVAL 100 /* During sensor monitoring */
+#define  BATTPOWER       650 /* Analog level, below which is battery power */
 
 #include "device.h"
 
-int tunables[] = { 2, 90, 75, 300, 1, 30, 0, 50, 20, 15, 0, 0, 900, 900, 0, 0, 150 };
+int tunables[] = { 2, 90, 75, 300, 1, 30, 0, 50, 20, 15, 0, 0, 900/*, 0, 0, 150*/ };
 
 /* Array mapped to legible pointer names */
 int *numSensors = &tunables[0];
@@ -42,10 +46,9 @@ int *biasP = &tunables[8];
 int *minGrp = &tunables[9];
 int *enAdj = &tunables[10];
 int *toBLE = &tunables[11];
-int *rpiCutoff = &tunables[12];
-int *sleepDelay = &tunables[13];
-int *ratio[2] = { &tunables[14], &tunables[15] };
-int *loadPressure = &tunables[16];
+int *sleepDelay = &tunables[12];
+/*int *ratio[2] = { &tunables[14], &tunables[15] };
+int *loadPressure = &tunables[16];*/
 
 byte debugging = 0;
 char db[20];
@@ -58,6 +61,7 @@ byte lastIf;
 int batlvl;
 long lastBat = -1;
 byte powerSaving = 0;
+byte batteryPower = 0;
 unsigned long powerSavingTime = 0;
 unsigned long wifiSavingTime = 0;
 
@@ -163,10 +167,23 @@ void setupIface(byte init) {
 }
 
 void setupLowPower() {
+  Serial1.print("Z\n");
+  delay(500);
   if (!lastIf) Keyboard.end();
   ble.sendCommandCheckOK("AT+GAPCONNECTABLE=0");
   ble.sendCommandCheckOK("AT+GAPDISCONNECT");
   ble.sendCommandCheckOK("AT+GAPSTOPADV");
+  digitalWrite(22, LOW);
+}
+
+void teardownLowPower() {
+  setupIface(1);
+  captureS1 = true; /* If waking up, ignore next */
+  digitalWrite(22, HIGH);
+  powerSaving = false;
+  Serial1.print("z\n");
+  powerSavingTime = millis();
+  USBDevice.attach();
 }
 
 void setup() {
@@ -292,24 +309,30 @@ void loop() {
       impulseP[s] = (impulseP[s] + 1) % *avgWin;
       if (powerSaving) {
         /* Make sure we wake the interface */
-        setupIface(1);
-        captureS1 = true; /* If waking up, ignore next */
-        powerSaving = false;
-        powerSavingTime = millis();
+        teardownLowPower();
       }
     } else if (lastImpulse[s] != 0) { /* During event, sample */
       impulseBuffer[s][impulseP[s]] = v;
       impulseP[s] = (impulseP[s] + 1) % *avgWin;
-    } else if (analogRead(A5) < 650) {
-      if (millis() - powerSavingTime > *sleepDelay * 1000 ) {
+    } else if (analogRead(A5) < BATTPOWER) {
+      if (!batteryPower) {
+        batteryPower = 1;
+        Serial1.print("B\n");
+        Serial1.println(analogRead(A5));
+      }
+      if (millis() - powerSavingTime > (unsigned long) *sleepDelay * 1000 ) {
         if (!powerSaving) setupLowPower();
         powerSaving = true;
-        LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF); /* Save power */
+        LowPower.powerDown(SLEEP_8S, ADC_ON, BOD_OFF); /* Save power */
+        //LowPower.idle(SLEEP_8S, ADC_OFF, TIMER4_OFF, TIMER3_OFF, TIMER1_OFF, 
+        //TIMER0_OFF, SPI_OFF, USART1_OFF, TWI_OFF, USB_OFF);
       }
     } else if (powerSaving) {
-      setupIface(1);
-      captureS1 = true; /* If waking up, ignore next */
-      powerSaving = false;
+      teardownLowPower();
+    } else if (batteryPower) {
+      batteryPower = 0;
+      Serial1.print("b\n");
+      Serial1.println(analogRead(A5));
     }
     if (monitor && s == 0 && (millis() - monitorTime > MONITORINTERVAL)) monitor = 2;
     if (monitor == 2) {
@@ -329,11 +352,13 @@ skip:
     val = Serial1.read();
     switch (val) {
       case 1: /* Read state */
-        delay(100);
-        for (sp = 0; sp < (sizeof(tunables) / sizeof(int)); sp++) {
-          Serial1.print(tunables[sp]);
-          Serial1.print(",");
-        }
+        Serial1.print("A");
+        dumpSettings();
+        Serial1.print("\n");
+        break;
+
+      case 2: /* Read programming */
+        Serial1.print("B");
         Serial1.print(pString);
         Serial1.print("\n");
         break;
@@ -362,7 +387,8 @@ skip:
         break;
 
       case 9: /* Get power source */
-        Serial1.print(analogRead(A5));
+        Serial1.print("S");
+        Serial1.print(analogRead(A5) < BATTPOWER);
         Serial1.print("\n");
         break;
 
@@ -374,13 +400,6 @@ skip:
         resetFunc();
         break;
 
-      case 14: /* Get sensors */
-        Serial1.print(analogRead(A0));
-        Serial1.print(",");
-        Serial1.print(analogRead(A1));
-        Serial1.print("\n");
-        break;
-      
       case 15: /* Delete bonding info */
         ble.sendCommandCheckOK("AT+GAPDELBONDS");
         break;
@@ -389,11 +408,13 @@ skip:
         dumpCapabilities();
         break;
 
-      case 17: /* Get device capability string */
-      case 18: /* Or just the id */
+      case 17: /* Get device id */
         Serial1.print(F("v1.1-"));
         for (int adx = 1007; adx < 1024; adx++) Serial1.write(EEPROM.read(adx));
-        if (val == 17) Serial1.print(F("-aid2-e9599daa"));
+        Serial1.print(F("-"));
+        Serial1.print(DEV_MODEL);
+        Serial1.print(F("-"));
+        Serial1.print(GIT_HASH);
         Serial1.print("\n");
         break;
       
@@ -405,7 +426,7 @@ skip:
         Serial1.print("\n");
         break;
 
-      case 20: /* Collect baseline */
+      /*case 20: / Collect baseline /
         for (sp = 0; sp < SAMP; sp++) {
           for (byte s = 0; s < *numSensors; s++) impulseBuffer[s][sp] = analogRead(s) >> 2;
           delay(10);
@@ -437,7 +458,7 @@ skip:
         Serial1.print(',');
         Serial1.print(*ratio[1]);
         Serial1.print('\n');
-        break;
+        break;*/
     }
   }
 
@@ -461,13 +482,6 @@ skip:
     }
   }
 
-  if (analogRead(A5) >= 650) {
-      wifiSavingTime = millis();
-    digitalWrite(22, HIGH);
-  } else {
-    unsigned long cutoff = (unsigned long) *rpiCutoff;
-      digitalWrite(22, (millis() - wifiSavingTime < cutoff * 1000));
-  }
 }
 
 /* ===== Averaging, calibration ===== */
@@ -831,6 +845,20 @@ void dumpCapabilities() {
       strncpy_P (buffer, j.desc, 80);
       Serial1.print(buffer);
       Serial1.print(";");
+  }
+  Serial1.print("\n");
+}
+
+void dumpSettings() {
+  for (int i = 0; i < TCMAX; i++) {
+      TINFO j;
+      memcpy_P(&j, &TDESC[i], sizeof(j));
+      char buffer[80];
+      strncpy_P (buffer, j.var, 80);
+      Serial1.print(buffer);
+      Serial1.print("=");
+      Serial1.print(tunables[i]);
+      if (i < TCMAX - 1) Serial1.print("&");
   }
   Serial1.print("\n");
 }

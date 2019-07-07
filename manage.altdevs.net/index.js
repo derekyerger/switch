@@ -306,7 +306,7 @@ function populateLastCmds() {
 }
 
 function proxyAssign(cmd) {
-	if (beginner) $('.panel-title:contains("Device visual")').parents('.panel').children('.panel-body').hide(300);
+	// if (beginner) $('.panel-title:contains("Device visual")').parents('.panel').children('.panel-body').hide(300);
 	if (!$('.panel-title:contains("Input assignment")').length) retr('component', 'input-assignment');
 	setTimeout(function() {
 		if (beginner) $('.panel-title:contains("Input assignment")')[0].scrollIntoView();

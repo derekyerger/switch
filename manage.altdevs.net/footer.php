@@ -45,6 +45,23 @@
 	<script>
 		$(document).ready(function() {
 			App.init();
+			var images = new Array()
+			function preload() {
+				for (i = 0; i < preload.arguments.length; i++) {
+					images[i] = new Image()
+					images[i].src = preload.arguments[i]
+				}
+			}
+			preload(
+				"/i0.svg",
+				"/i1.svg",
+				"/i2.svg",
+				"/i3.svg",
+				"/img/board-games.jpg",
+				"/img/web.jpg",
+				"/img/office.jpg",
+				"/img/keyboard.png",
+			)	
 		});
 	</script>
 </body>
