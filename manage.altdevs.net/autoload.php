@@ -4,7 +4,7 @@ require_once("comms/comms.php");
 
 if (file_exists('/www/hciconf')) {
 	/* RPi or other OpenWRT-backed device */
-	require_once("devices/aid2.php"); /* Assumed */
+	require_once("devices/aid1.php"); /* Assumed */
 	$comm = new comms\SerialDevice("/dev/ttyS0");
 	define('DEV_TIMEOUT', 1000);
 } elseif (file_exists('/dev/ttyUSB0') || file_exists('/dev/ttyACM0')) {

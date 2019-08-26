@@ -41,8 +41,8 @@ $card = [
 			<div class="col text-right">Select <img class="tico" src="i2.svg"></div>
 		</div>
 		<br/>
-		<button id="ccActivate" type="button" class="btn btn-info" onclick="template(\'10W;20X;11Z;21Y;12|;22~;\');">Activate</button>
-		<button id="ccAssign" type="button" class="btn btn-primary disabled" data-toggle="tooltip" data-placement="bottom" title="Requires Desktop Helper">Assign to app</button>
+		<button type="button" class="btn btn-info" onclick="template(\'10W;20X;11Z;21Y;12|;22~;\');">Activate</button>
+		<button type="button" class="btn btn-primary disabled" data-toggle="tooltip" data-placement="bottom" title="Requires Desktop Helper">Assign to app</button>
 	'];
 require('elements/widget-card.php');
 
@@ -57,17 +57,23 @@ $card = [
 		</div>
 		<div class="row">
 			<div class="col"><img class="tico" src="i1.svg"> Page up</div>
-			<div class="col text-right">Next tab <img class="tico" src="i1.svg"></div>
+			<div class="col text-right">Previous link <img class="tico" src="i1.svg"></div>
 		</div>
 		<div class="row">
 			<div class="col"><img class="tico" src="i2.svg"> Back a page</div>
 			<div class="col text-right">Follow link <img class="tico" src="i2.svg"></div>
 		</div>
 		<div class="row">
+			<div class="col text-center"><img class="tico" src="i0.svg"> Next tab</div>
+		</div>
+		<div class="row">
+			<div class="col text-center"><img class="tico" src="i1.svg"> Jump 10 links</div>
+		</div>
+		<div class="row">
 			<div class="col text-center"><img class="tico" src="i2.svg"> Random wikipedia<br>page in new tab</div>
 		</div>
 		<br/>
-		<button type="button" class="btn btn-info" onclick="template(\'10!;20V;11^!;21S;12|;22%X;30^Z;31^Y;32^t`https+\\;//en.wikipedia.org/wiki/+special+\\;+random|;\');">Activate</button>
+		<button type="button" class="btn btn-info" onclick="template(\'10!;11+!;12|;20V;21S;22%X;30^!;31!!!!!!!!!!;32^t`https\\\\://en.wikipedia.org/wiki/+special\\\\:+random|;\');">Activate</button>
 		<button type="button" class="btn btn-primary disabled" data-toggle="tooltip" data-placement="bottom" title="Requires Desktop Helper">Assign to app</button>
 	'];
 require('elements/widget-card.php');

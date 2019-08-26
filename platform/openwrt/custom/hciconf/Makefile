@@ -25,6 +25,8 @@ endef
 define Package/hciconf/install
 	$(INSTALL_DIR) $(1)/etc
 	$(CP) ./files/etc/* $(1)/etc
+	$(INSTALL_DIR) $(1)/etc/init.d
+	$(INSTALL_BIN) ./files/setbaud.init $(1)/etc/init.d/setbaud
 	$(INSTALL_DIR) $(1)/www/hciconf/
 	$(CP) ./files/www/hciconf/* $(1)/www/hciconf/
 endef

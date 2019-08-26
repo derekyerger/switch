@@ -2,7 +2,7 @@
 
 # Set up AP defaults
 uci set network.lan.ipaddr="172.31.11.1"
-uci set wireless.default_radio0.ssid="Accessible Input Device"
+uci set wireless.default_radio0.ssid="Vectis-`xxd -p /dev/urandom |head -c 6`"
 uci set wireless.default_radio0.encryption=psk2
 uci set wireless.default_radio0.key="oxymoronicdis"
 uci set wireless.default_radio0.disabled=0
@@ -11,6 +11,7 @@ uci add_list dhcp.lan.dhcp_option='3'
 uci add_list dhcp.lan.dhcp_option='6'
 uci del dhcp.lan.dhcpv6
 uci del dhcp.lan.ra
+uci set system.@system[0].hostname='Vectis'
 uci commit
 wifi
 

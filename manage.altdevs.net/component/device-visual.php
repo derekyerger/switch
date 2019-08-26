@@ -4,7 +4,7 @@ if (!$prog) {
 	$note = [
 		'icon' => "far fa-save",
 		'title' => "Blank device detected",
-		'content' => 'Your device has no programming! Tap anywhere on the device to get started, or head to <a href="javascript:retr(\'page\', \'Templates\');">templates</a> to choose from a predefined set of inputs.'];
+		'content' => 'Your device has no programming! Tap anywhere on the device to get started, or <a id="lnk" href="javascript:helpSeq(0);">start the guided tour</a>.'];
 	require('elements/note.php');
 } ?>
 <div class="col-lg-11 col-md-10 col-sm-9 responsive-device">

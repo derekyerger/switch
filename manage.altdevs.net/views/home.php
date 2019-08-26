@@ -6,7 +6,6 @@ if (!isset($subView) || $subView == "status") {
 	$prog = preg_replace("/^.*programming=/", "", $_SESSION['prog']);
 	if (isset($subView)) $prog = "--";
 	require('component/device-visual.php');
-	if (!$prog) return; /* Only show device visual on blank device */
 
 	if ($subView == "status") { ?>
 	<div class="row">

@@ -31,6 +31,24 @@
 	<!-- ================== END BASE JS ================== -->
 	<style>
 		<?= DEV_CSS ?>
+		.btn.active:focus,
+		.btn:active:focus,
+		.btn:focus,
+		.navbar-toggle.active:focus,
+		.navbar-toggle:active:focus,
+		.navbar-toggle:focus,
+		a.active:focus,
+		a:active:focus,
+		a:focus {
+		  outline: #c2e900 thick solid !important;
+		}
+		#lnk.active:focus,
+		#lnk:active:focus,
+		#lnk:focus {
+		  outline: black thick solid !important;
+		  color: black;
+		}
+
 	</style>
 </head>
 <body>

@@ -152,6 +152,9 @@ function retr(cmd, data) {
 			spinnerEnd();
 
 			if (cmd == "page") {
+				if ($(".navbar-toggle:visible").length && $(".page-sidebar-toggled").length)
+					$('.navbar-toggle').click();
+
 				unping();
 				if (data != "Home.status" && (pressureSlider.length > 0 || pressureChart !== null)) {
 					retr("stopMonitor", null);
@@ -189,6 +192,8 @@ function retr(cmd, data) {
 				retr("saveProfile", { name: $("#ddProfile").html(), data: programming });
 
 			} else eval(rxObj);
+			
+			if (cmd == "page") $(".content button:first").focus();
 
 			if (ajaxRetFn && cmd != "getHelp") {
 				var t = ajaxRetFn;

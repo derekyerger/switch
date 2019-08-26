@@ -19,8 +19,8 @@
 
 void (*resetFunc) (void) = 0;
 
-#define  DEV_MODEL       F("aid2")
-#define  GIT_HASH        F("59cf7838~")
+#define  DEV_MODEL       F("vectis")
+#define  GIT_HASH        F("c1931b10~")
 
 #define  MAGIC           25  /* To detect if flash has been initialized */
 #define  STRBUF          512 /* Buffer size for programming string */
@@ -31,7 +31,7 @@ void (*resetFunc) (void) = 0;
 
 #include "device.h"
 
-int tunables[] = { 2, 90, 75, 300, 1, 30, 0, 50, 20, 15, 0, 0, 900/*, 0, 0, 150*/ };
+int tunables[] = { 2, 115, 95, 300, 1, 30, 0, 50, 20, 15, 0, 0, 900/*, 0, 0, 150*/ };
 
 /* Array mapped to legible pointer names */
 int *numSensors = &tunables[0];
@@ -212,7 +212,7 @@ void setup() {
     EEPROM.update(adx, MAGIC >> 8); EEPROM.update(adx + 1, MAGIC);
     saveValues();
     ble.factoryReset();
-    ble.println("AT+GAPDEVNAME=Accessible Input Device");
+    ble.println("AT+GAPDEVNAME=Vectis");
     ble.sendCommandCheckOK("AT+HWMODELED=DISABLE");
   } else {
     int sp;
@@ -232,7 +232,7 @@ void setup() {
     randomSeed(analogRead(0) + analogRead(1));
     EEPROM.update(1006, 121);
     for (adx = 1007; adx < 1024; adx++) {
-      int c = random(62);
+      int c = random(61);
       if (c > 50) c -= 3;
       else if (c > 25) c += 39;
       else c += 97;
@@ -353,13 +353,12 @@ skip:
       case 1: /* Read state */
         Serial1.print("A");
         dumpSettings();
-        Serial1.print("\n");
         break;
 
       case 2: /* Read programming */
         Serial1.print("B");
         Serial1.print(pString);
-        Serial1.print("\n");
+        Serial1.print('\n');
         break;
 
       case 3: /* Temporary program */
@@ -388,7 +387,7 @@ skip:
       case 9: /* Get power source */
         Serial1.print("S");
         Serial1.print(analogRead(A5) < BATTPOWER);
-        Serial1.print("\n");
+        Serial1.print('\n');
         break;
 
       case 11: /* Set debugging */
@@ -422,7 +421,7 @@ skip:
         Serial1.print(*softP);
         Serial1.print(",");
         Serial1.print(*hardP);
-        Serial1.print("\n");
+        Serial1.print('\n');
         break;
 
       /*case 20: / Collect baseline /
@@ -458,6 +457,19 @@ skip:
         Serial1.print(*ratio[1]);
         Serial1.print('\n');
         break;*/
+      case 21: /* Reset ID */
+        while (analogRead(0) < 100) delay(150);
+        delay(500);
+        randomSeed(analogRead(0) + analogRead(1));
+        EEPROM.update(1006, 121);
+        for (adx = 1007; adx < 1024; adx++) {
+          int c = random(61);
+          if (c > 50) c -= 3;
+          else if (c > 25) c += 39;
+          else c += 97;
+          EEPROM.update(adx, c);
+        }
+        break;
     }
   }
 
@@ -845,7 +857,7 @@ void dumpCapabilities() {
       Serial1.print(buffer);
       Serial1.print(";");
   }
-  Serial1.print("\n");
+  Serial1.print('\n');
 }
 
 void dumpSettings() {
@@ -859,5 +871,5 @@ void dumpSettings() {
       Serial1.print(tunables[i]);
       if (i < TCMAX - 1) Serial1.print("&");
   }
-  Serial1.print("\n");
+  Serial1.print('\n');
 }

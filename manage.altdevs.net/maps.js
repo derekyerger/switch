@@ -186,23 +186,49 @@ var actionMap = platformMap['*']; /* All the actions we can assign */
 
 var helpMap = [ /* Help sequence */
 	{
+		"e": 'swal("Note", "During the guided tour, a left tap goes forward, and a right tap goes back. Press and hold either side to end the tour.", "warning")',
+	}, {
 		"a": 1,
-		"e": 'retr("page", "Home");',
+		"e": 'swal.close();retr("page", "Home");',
+		"er": 'swal("Note", "During the guided tour, a left tap goes forward, and a right tap goes back. Press and hold either side to end the tour.", "warning")',
 	}, {
 		"p": "right",
 		".nav li span:contains(\"Home\")": "The Status screen shows the current usage of the device. As inputs are detected, this window shows what was detected"
 	}, {
-		".img-fluid": "Inputs will be displayed here. An animation and pop-up shows the input",
+		".img-fluid:visible": "Inputs will be displayed here. An animation and pop-up shows the input",
 	}, {
 		".responsive-device-txt": "The last ten inputs are listed here",
 	}, {
 		"a": 1,
-		"e": 'fetchPage("Configuration");',
-		"er": 'fetchPage("Status");',
+		"e": 'retr("page", "Templates");',
+		"er": 'retr("page", "Home");',
+	}, {
+		"p": "right",
+		".nav li span:contains(\"Templates\")": "The Templates panels contain activity-specific collections of settings."
+	}, {
+		"div.widget-card:has(>> h4:contains('Board Games'))": "Each card listed on this screen contains a preconfigured template of commonly used tasks in an activity",
+		"p": "left",
+		"h4:contains('Board Games')": "The activity title is shown in this space, with a short description below it",
+	}, {
+		"p": "top",
+		"#cci0": "This light arrow corresponds to soft tap, and is assigned to the left side",
+	}, {
+		"p2": "right",
+		"#cci1": "This weighted arrow corresponds to a hard tap on the right",
+	}, {
+		"p3": "bottom",
+		"#cci2": "A roundabout arrow corresponds to press-and-hold",
+	}, {
+		"div.widget-card:has(>> h4:contains('Board Games')) >> button.btn-info": "Click this button to configure the device as shown",
+		//"div.widget-card:has(>> h4:contains('Board Games')) >> button.btn-primary": "After installing the Desktop Helper application, a template may be assigned to a specific application",
+	}, {
+		"a": 1,
+		"e": 'retr("page", "Home.assignments");',
+		"er": 'retr("page", "Templates");',
 	}, {
 		"er": '$("#ddLocation").dropdown("toggle");',
-		"p": "bottom",
-		"#mConfiguration": "This is the main configuration window. The device is configured on this screen"
+		"p": "right",
+		".nav li a:contains(\"Assignments\")": "Each kind of input can be customized on the Assignments page"
 	}, {
 		"e": '$("#ddLocation").dropdown("toggle");',
 		"er": '$("#ddLocation").dropdown("toggle");$("#ddImpulse").dropdown("toggle");',
@@ -231,6 +257,7 @@ var helpMap = [ /* Help sequence */
 		"t": 1
 	}, {
 		"#as1": "Now, choose a category",
+	}, {
 		"#dd1": "In this case, web browsing will be chosen",
 	}, {
 		"e": "nextAction(1, 'Web Browsing');",
@@ -240,6 +267,7 @@ var helpMap = [ /* Help sequence */
 		"#dd5": "This option corresponds to making the browser go back a page",
 	}, {
 		"e": "nextAction(3, 'Go Back');",
+		"p": "left",
 		"#keyRep": "These are the keystrokes sent to the computer that cause the action to be performed",
 		"#asSave": "Click Save Changes to reassign the input to this action",
 	}, {
@@ -247,31 +275,14 @@ var helpMap = [ /* Help sequence */
 		"er": 'ddSet("ddLocation", "Left");ddSet("ddImpulse", "Soft Tap");$("#actionDlg").modal("show");',
 		"t": 1
 	}, {
+		"e": "$('#ddSave')[0].scrollIntoView();",
 		"#ddSave": "Configuration changes are lost on power loss. Click this button to commit them to memory",
 	}, {
 		"#bluetooth": "Click this toggle to choose which interface to send actions through",
 	}, {
 		"a": 1,
-		"e": 'fetchPage("Templates");',
-		"er": 'fetchPage("Configuration");',
-	}, {
-		"#ccCard": "Each card listed on this screen contains a preconfigured template of commonly used tasks in an activity",
-		"p": "left",
-		"#ccActivity": "The activity title is shown in this space, with a short description below it",
-	}, {
-		"p": "top",
-		"#cci0": "This light arrow corresponds to soft tap, and is assigned to the left side",
-		"p2": "right",
-		"#cci1": "This weighted arrow corresponds to a hard tap on the right",
-		"p3": "bottom",
-		"#cci2": "A roundabout arrow corresponds to press-and-hold",
-	}, {
-		"#ccActivate": "Click this button to configure the device as shown",
-		"#ccAssign": "After installing the Desktop Helper application, a template may be assigned to a specific application",
-	}, {
-		"a": 1,
-		"e": 'fetchPage("User Guide");',
-		"er": 'fetchPage("Templates");',
+		"e": 'retr("page", "Help");',
+		"er": 'retr("page", "Home.assignments");',
 	}, {
 		"#um": "For additional information, refer to the user manual",
 	}

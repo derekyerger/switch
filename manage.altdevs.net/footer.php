@@ -63,7 +63,22 @@
 				"/img/keyboard.png",
 				"/img/charging.png",
 				"/img/battery.png",
-			)	
+			)
+			$('.navbar-toggle').keydown(function(e){
+				if (e.which == 9 &&
+					$(".navbar-toggle:visible").length &&
+					e.shiftKey == $(".page-sidebar-toggled").length) {
+					$('.navbar-toggle').click();
+				}
+			});
+			$('.sidebar-minify-btn').keydown(function(e){
+				if (e.which == 9 &&
+					$(".navbar-toggle:visible").length &&
+					e.shiftKey != $(".page-sidebar-toggled").length) {
+					$('.navbar-toggle').click();
+				}
+			});
+			$('.navbar-brand').focus();
 		});
 	</script>
 </body>
