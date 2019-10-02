@@ -20,7 +20,7 @@
 void (*resetFunc) (void) = 0;
 
 #define  DEV_MODEL       F("vectis")
-#define  GIT_HASH        F("c1931b10~")
+#define  GIT_HASH        F("f082bc18~")
 
 #define  MAGIC           25  /* To detect if flash has been initialized */
 #define  STRBUF          512 /* Buffer size for programming string */
@@ -212,7 +212,7 @@ void setup() {
     EEPROM.update(adx, MAGIC >> 8); EEPROM.update(adx + 1, MAGIC);
     saveValues();
     ble.factoryReset();
-    ble.println("AT+GAPDEVNAME=Vectis");
+    ble.sendCommandCheckOK("AT+GAPDEVNAME=Vectis");
     ble.sendCommandCheckOK("AT+HWMODELED=DISABLE");
   } else {
     int sp;

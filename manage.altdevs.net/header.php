@@ -48,6 +48,7 @@
 		  outline: black thick solid !important;
 		  color: black;
 		}
+		.panel.panel-expand { z-index: 1040 }
 
 	</style>
 </head>

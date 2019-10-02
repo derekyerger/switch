@@ -12,21 +12,85 @@ JS::append("
     });
 ");
 $comm->txrxCmd(3, "\x0\n"); /* Clears device */
-JS::append("if (ws) ws.onmessage = function(msg) {
+JS::append("$.extend($.gritter.options, { fade_in_speed: 0 }); if (ws) ws.onmessage = function(msg) {
 	console.log(msg.data);
 	t = $('iframe')[0].contentWindow.onMoveKey;
 	switch (msg.data) {
 		case '>20;':
 			t([-15, 0]);
+			$('.gritter-item-wrapper').remove();
+			$.gritter.add({
+				title: 'Soft tap left',
+				text: 'Go left',
+				image: 'i0.svg',
+				sticky: false,
+				time: ''
+			});
 			break;
 		case '>10;':
 			t([15, 0]);
+			$('.gritter-item-wrapper').remove();
+			$.gritter.add({
+				title: 'Soft tap right',
+				text: 'Go right',
+				image: 'i0.svg',
+				sticky: false,
+				time: ''
+			});
 			break;
 		case '>21;':
 			t([0, -15]);
+			$('.gritter-item-wrapper').remove();
+			$.gritter.add({
+				title: 'Hard tap left',
+				text: 'Go down',
+				image: 'i1.svg',
+				sticky: false,
+				time: ''
+			});
 			break;
 		case '>11;':
 			t([0, 15]);
+			$('.gritter-item-wrapper').remove();
+			$.gritter.add({
+				title: 'Hard tap right',
+				text: 'Go up',
+				image: 'i1.svg',
+				sticky: false,
+				time: ''
+			});
+			break;
+		case '>22;':
+			$('.gritter-item-wrapper').remove();
+			$.gritter.add({
+				title: 'Long press left',
+				text: 'Does nothing! Try tapping.',
+				image: 'i2.svg',
+				sticky: false,
+				time: ''
+			});
+			break;
+		case '>12;':
+			$('.gritter-item-wrapper').remove();
+			$.gritter.add({
+				title: 'Long press right',
+				text: 'Does nothing! Try tapping.',
+				image: 'i2.svg',
+				sticky: false,
+				time: ''
+			});
+			break;
+		case '>30;':
+		case '>31;':
+		case '>32;':
+			$('.gritter-item-wrapper').remove();
+			$.gritter.add({
+				title: 'Center input',
+				text: 'Try left or right inputs.',
+				image: 'i2.svg',
+				sticky: false,
+				time: ''
+			});
 			break;
 	};
 }; ajaxRetFn = 'ajaxRetFn = \"ws.onmessage = function(msg) { ping(msg.data); };\";';");
