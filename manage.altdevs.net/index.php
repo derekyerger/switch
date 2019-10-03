@@ -88,7 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
 		case "reset":
 			$comm->txrxCmd(12);
-			shell_exec("sync; sleep 20");
+			shell_exec("reboot");
 			break;
 
 		case "getProfile":
@@ -177,5 +177,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 			print 'swal("Set credentials", "Saved successfully. Please reconnect to the access point to continue.", "warning");';
 			break;
 		
+		case "update":
+			$curver = file_get_contents("/etc/openwrt_version");
+			if (trim(shell_exec('uci show wireless.default_radio0.mode|cut -d= -f2')) == "'ap'") {
+				print 'swal("Update software", "An update from the internet cannot be performed when operating in Access Point mode. Please connect to a network from the Network page before attempting an internet update.", "info");';
+			} else {
+				$newver = shell_exec("curl https://api.altdevs.net/version.php -H 'User-Agent: altdevs.net $curver'");
+				if ($newver) {
+					print 'swal("Update software", "There is a newer version of software available. Update now?", "info");';
+				} else {
+					print 'swal("Update software", "There are no new updates available.", "info");';
+				}
+				print $newver;
+			}
+			break;
+
 	}
 } ?>

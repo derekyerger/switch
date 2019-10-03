@@ -4,5 +4,6 @@
 <?php
 
 require('component/system-controls.php');
+require('component/update.php');
 require('component/settings-editor.php');
 ?>
