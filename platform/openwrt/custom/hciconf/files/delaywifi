@@ -1,0 +1,22 @@
+#!/bin/ash
+
+sleep 1; wifi
+
+[ $1 == "cli" ] && {
+	sleep 1
+	failures=0
+	while ! iw dev |grep -q ssid; do
+		failures=$((failures + 1))
+		[ $failures -ge 15 ] && break
+		sleep 1
+	done
+	while [ -z "$ip" ]; do
+		failures=$((failures + 1))
+		[ $failures -ge 15 ] && break
+		sleep 1
+		ip=$(ifconfig wlan0 |grep 'inet addr'|cut -d: -f2 |cut -d' ' -f1)
+	done
+	[ $failures -ge 15 ] || {
+		curl 'https://api.altdevs.net/update.php' --data "nonce=$2&ip=$ip"
+	}
+}

@@ -2,6 +2,10 @@
 
 # Set up AP defaults
 uci set network.lan.ipaddr="172.31.11.1"
+uci set network.lan.ifname=
+uci set network.wan=interface
+uci set network.wan.proto='dhcp'
+uci set firewall.@zone[1].input='ACCEPT'
 uci set wireless.default_radio0.ssid="Vectis-`xxd -p /dev/urandom |head -c 6`"
 uci set wireless.default_radio0.encryption=psk2
 uci set wireless.default_radio0.key="oxymoronicdis"

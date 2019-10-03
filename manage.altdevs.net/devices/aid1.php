@@ -18,4 +18,6 @@ define('DEV_CSS', '
 ');
 
 define('DEV_HAS_BLUETOOTH', true);
+
+define('DEV_CODENAME', 'Vectis');
 ?>

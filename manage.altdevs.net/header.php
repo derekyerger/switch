@@ -182,6 +182,12 @@
 						</a>
 					</li>
 					<li>
+						<a href="javascript:" onclick="retr('page', 'Network');">
+							<i class="fa fa-wifi"></i>
+							<span>Network</span>
+						</a>
+					</li>
+					<li>
 						<a href="javascript:" onclick="retr('page', 'Advanced')">
 							<i class="fa fa-list-ul"></i>
 							<span>Advanced</span>

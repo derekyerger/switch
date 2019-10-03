@@ -1,0 +1,17 @@
+#!/bin/ash
+
+failures=0
+while true; do
+	iw dev |grep -q ssid && failures=0 || failures=$((failures + 1))
+	sleep 1
+	[ $failures -ge 15 ] && {
+		failures=0
+		echo "Failed to connect to network $(uci show wireless.default_radio0.ssid|cut -d= -f2)." > /tmp/wifi_error
+		uci set wireless.default_radio0.ssid=$(uci show wireless.default_radio0.ssid_inbuilt|cut -d= -f2|head -c -2|tail -c +2)
+		uci set wireless.default_radio0.key=$(uci show wireless.default_radio0.key_inbuilt|cut -d= -f2|head -c -2|tail -c +2)
+		uci set wireless.default_radio0.mode='ap'
+		uci set wireless.default_radio0.network='lan'
+		uci commit
+		wifi
+	}
+done

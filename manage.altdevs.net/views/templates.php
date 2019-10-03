@@ -2,28 +2,20 @@
 <h1 class="page-header">Templates <small>Predefined action sets</small></h1>
 <!-- end page-header -->
 					<!-- begin row -->
-					<div class="row row-space-10">
 <?php
-$card = [
-	'title' => "Legend",
-	'subtitle' => "",
-	'content' => '
+$title = "Legend";
+$content = '
 		<div class="row">
-			<div class="col"><img class="tico" src="i0.svg"> Soft press</div>
-		</div>
-		<div class="row">
-			<div class="col"><img class="tico" src="i1.svg"> Hard press</div>
-		</div>
-		<div class="row">
-			<div class="col"><img class="tico" src="i2.svg"> Press-and-hold</div>
-		</div>
-		<div class="row">
+			<div class="col"><img class="tico" src="i0.svg"> Soft tap</div>
+			<div class="col"><img class="tico" src="i1.svg"> Hard tap</div>
+			<div class="col"><img class="tico" src="i2.svg"> Long press</div>
 			<div class="col"><img class="tico" src="i3.svg"> Double tap</div>
 		</div>
-	'];
-require('elements/widget-card.php');
-
-$card = [
+	';
+require('elements/panel.php'); ?>
+<?php ob_start(); ?>
+					<div class="row row-space-10">
+<?php $card = [
 	'title' => "Board Games",
 	'subtitle' => "Arrow-key based games like Chess, Solitaire, and Minesweeper",
 	'image' => "img/board-games.jpg",
@@ -106,6 +98,8 @@ $card = [
 		<button type="button" class="btn btn-primary disabled" data-toggle="tooltip" data-placement="bottom" title="Requires Desktop Helper">Assign to app</button>
 	'];
 require('elements/widget-card.php');
-?>
+
+$title = "Standard templates"; ?>
 					</div>
-					<!-- end row -->
+<?php $content = ob_get_clean();
+require('elements/panel.php'); ?>

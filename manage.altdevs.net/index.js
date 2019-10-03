@@ -454,6 +454,21 @@ function activateElt(p) {
 				});
 			});
 			break;
+
+		case "clisettings":
+			$("#clientDlg").on("shown.bs.modal", function() {
+				var v = $("#clientDlg").data();
+				$("#cli_ssid").val( v.s );
+				$("#key").val('');
+			});
+			break;
+
+		case "apsettings":
+			$("#apDlg").on("shown.bs.modal", function() {
+				$("#ssid").val( $("#currentAP").val() );
+				$("#key").val( $("#currentPSK").val() );
+			});
+			break;
 	}
 	
 	$('[data-toggle="tooltip"]').tooltip()
@@ -733,4 +748,20 @@ function calibrate() {
 	function(x) {
 		if (x) retr("page", "Calibration");
 	});
+}
+
+var findDeviceTimer;
+var findDeviceNonce;
+
+function findDevice(nonce) {
+	findDeviceNonce = nonce;
+	findDeviceTimer = setInterval(function() {
+		$.post("https://api.altdevs.net/do.php", { nonce: findDeviceNonce })
+			.done(function(rxObj) {
+				if (rxObj) {
+					window.location.assign('http://' + rxObj + '/');
+					clearTimeout(findDeviceTimer);
+				}
+			});
+		}, 10000);
 }
