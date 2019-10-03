@@ -20,7 +20,7 @@
 void (*resetFunc) (void) = 0;
 
 #define  DEV_MODEL       F("vectis")
-#define  GIT_HASH        F("f082bc18~")
+#define  GIT_HASH        F("7aaec0c5~")
 
 #define  MAGIC           25  /* To detect if flash has been initialized */
 #define  STRBUF          512 /* Buffer size for programming string */

@@ -26,8 +26,8 @@ doPlot = function() {
 			borderColor: COLOR_GREY_LIGHTER,
 			backgroundColor: COLOR_SILVER_LIGHTER,
 			markings: [
-				{ color: '#a00', lineWidth:2, yaxis: { from: softP, to: softP } },
-				{ color: '#0a0', lineWidth:2, yaxis: { from: hardP, to: hardP } }
+				{ color: '#666', lineWidth:2, yaxis: { from: softP, to: softP } },
+				{ color: '#666', lineWidth:2, yaxis: { from: hardP, to: hardP } }
 			]
 		},
 		legend: {

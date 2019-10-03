@@ -1,9 +1,10 @@
 <?php $title = "System controls";
 ob_start(); ?>
 <p>Device ID: <?= $comm->txrxCmd(17, null, 1000) ?></p>
+<p>Software version: <?= file_get_contents("/etc/openwrt_version") ?></p>
 <button type="button" class="btn btn-primary" onclick="retr('commit');">Save to memory</button>
-<button type="button" class="btn btn-danger" onclick="retr('debug');">Debugging info</button>
-<button type="button" class="btn btn-danger" onclick="retr('reset');">Reboot Device</button>
+<!--button type="button" class="btn btn-danger" onclick="retr('debug');">Debugging info</button-->
+<button type="button" class="btn btn-primary" onclick="retr('reset');">Reboot Device</button>
 <?php $content = ob_get_clean();
 require('elements/panel.php'); ?>
 <div class="modal fade" id="debugDlg" tabindex="-1" role="dialog" aria-labelledby="actionDlgLabel" aria-hidden="true">

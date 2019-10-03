@@ -67,7 +67,7 @@
 		<div id="header" class="header navbar-default">
 			<!-- begin navbar-header -->
 			<div class="navbar-header">
-				<a href="javascript:;" class="navbar-brand"><span class="navbar-logo"></span> <b>alt</b>devs</a>
+				<div class="navbar-brand"><img src="img/logo.svg" /> &nbsp; <b><?= DEV_CODENAME ?></b> by Alternate Devices</div>
 				<button type="button" class="navbar-toggle" data-click="sidebar-toggled">
 					<span class="icon-bar"></span>
 					<span class="icon-bar"></span>

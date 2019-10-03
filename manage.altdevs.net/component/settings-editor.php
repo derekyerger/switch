@@ -1,6 +1,6 @@
 <?php $title = "Settings editor";
 ob_start();
-
+?><h3>Warning: Modifying these settings may cause your device to operate incorrectly.</h3><?php
 $editables = [];
 foreach (array_filter(explode(";", $comm->txrxCmd(16, "", DEV_TIMEOUT*2))) as $i) {
 	$j = explode(",", $i);

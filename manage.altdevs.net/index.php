@@ -88,7 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
 		case "reset":
 			$comm->txrxCmd(12);
-			shell_exec("sync; sleep 20");
+			shell_exec("reboot");
 			break;
 
 		case "getProfile":
