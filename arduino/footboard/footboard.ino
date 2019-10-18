@@ -1,4 +1,4 @@
-/* Copyright (c) 2016-2018 by Derek Yerger. All Rights Reserved. Patent pending. */
+/* Copyright (c) 2016-2019 by Derek Yerger for Alternate Devices LLC. All Rights Reserved. Patent pending. */
 
 #include <EEPROM.h>
 #include <Keyboard.h>
@@ -20,9 +20,9 @@
 void (*resetFunc) (void) = 0;
 
 #define  DEV_MODEL       F("vectis")
-#define  GIT_HASH        F("f082bc18~")
+#define  GIT_HASH        F("eac13ab4~")
 
-#define  MAGIC           25  /* To detect if flash has been initialized */
+#define  MAGIC           26  /* To detect if flash has been initialized */
 #define  STRBUF          512 /* Buffer size for programming string */
 #define  SAMP            50  /* For array allocation */
 #define  MAXSENS         2   /* For uarray allocation */
@@ -31,7 +31,7 @@ void (*resetFunc) (void) = 0;
 
 #include "device.h"
 
-int tunables[] = { 2, 115, 95, 300, 1, 30, 0, 50, 20, 15, 0, 0, 900/*, 0, 0, 150*/ };
+int tunables[] = { 2, 115, 95, 300, 1, 30, 0, 50, 20, 15, 0, 0, 900, 60/*, 0, 0, 150*/ };
 
 /* Array mapped to legible pointer names */
 int *numSensors = &tunables[0];
@@ -47,6 +47,7 @@ int *minGrp = &tunables[9];
 int *enAdj = &tunables[10];
 int *toBLE = &tunables[11];
 int *sleepDelay = &tunables[12];
+int *wifiSleepDelay = &tunables[13];
 /*int *ratio[2] = { &tunables[14], &tunables[15] };
 int *loadPressure = &tunables[16];*/
 
@@ -61,6 +62,7 @@ byte lastIf;
 int batlvl;
 long lastBat = -1;
 byte powerSaving = 0;
+byte wifiSaving = 0;
 byte batteryPower = 0;
 unsigned long powerSavingTime = 0;
 unsigned long wifiSavingTime = 0;
@@ -184,6 +186,7 @@ void teardownLowPower() {
   powerSaving = false;
   Serial1.print("z\n");
   powerSavingTime = millis();
+  wifiSavingTime = millis();
   USBDevice.attach();
 }
 
@@ -326,9 +329,14 @@ void loop() {
         LowPower.powerDown(SLEEP_8S, ADC_ON, BOD_OFF); /* Save power */
         //LowPower.idle(SLEEP_8S, ADC_OFF, TIMER4_OFF, TIMER3_OFF, TIMER1_OFF, 
         //TIMER0_OFF, SPI_OFF, USART1_OFF, TWI_OFF, USB_OFF);
+      } else if (millis() - wifiSavingTime > (unsigned long) *wifiSleepDelay * 1000 ) {
+        if (!wifiSaving) digitalWrite(22, LOW); /* Save power */
+        wifiSaving = 1;
       }
     } else if (powerSaving) {
       teardownLowPower();
+    } else if (wifiSaving) {
+      digitalWrite(22, HIGH);
     } else if (batteryPower) {
       batteryPower = 0;
       Serial1.print("p\n");
@@ -469,6 +477,10 @@ skip:
           else c += 97;
           EEPROM.update(adx, c);
         }
+        break;
+
+      case 22: /* Ping to keep awake */
+        wifiSavingTime = millis();
         break;
     }
   }

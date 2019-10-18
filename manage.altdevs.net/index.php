@@ -105,5 +105,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 		case "stopMonitor":
 			$comm->txrxCmd(19, "0\n", 1000);
 			break;
+		
+		case "keepAlive":
+			$comm->txrxCmd(22);
+			break;
 	}
 } ?>
