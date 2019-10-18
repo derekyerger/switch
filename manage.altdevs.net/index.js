@@ -238,7 +238,7 @@ function ping(a) {
 		if (lastCmds.length > 10) lastCmds.shift();
 		populateLastCmds();
 
-		if ($('.note h4:contains("Blank device detected")').parents('.note').hide(300).length) {
+		if ($('.note:visible h4:contains("Blank device detected")').parents('.note').hide(300).length) {
 			/* Welcome mode */
 			retr("component", "command-history");
 			setTimeout(function() {
