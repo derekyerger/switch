@@ -177,5 +177,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 			print 'swal("Set credentials", "Saved successfully. Please reconnect to the access point to continue.", "warning");';
 			break;
 		
+		case "keepAlive":
+			$comm->txrxCmd(22);
+			break;
 	}
 } ?>

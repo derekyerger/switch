@@ -25,6 +25,10 @@ function doText(e) {
 	i.val(i.val()+e);
 }
 
+function keepAlive() {
+	retr("keepAlive", null);
+}
+
 function getPart() {
 	var curSensor = locS[$("#ddLocation").text()];
 	var curImpulse = pS[$("#ddImpulse").text()];
@@ -113,6 +117,8 @@ $(document).ready(function() {
 	if (/altdevs.net/.test(window.location.hostname)) port = '7101';
 	setupPing(port);
 	$('[data-toggle="tooltip"]').tooltip();
+	keepAlive();
+	setInterval(keepAlive, 25000);
 });
 
 function setupPing(port) {
@@ -136,7 +142,7 @@ function delBond() {
 		closeOnConfirm: false},
 	function(x) {
 		if (x) {
-			retr("delbond");
+			retr("delbond", null);
 			ajaxRetFn = 'swal("Removed Bonding", "Any stored bonding information has been removed.", "success");';
 		}
 	});

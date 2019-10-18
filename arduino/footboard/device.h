@@ -6,7 +6,7 @@ typedef struct {
   const char *desc;
 } TINFO;
 
-const byte TCMAX = 13;
+const byte TCMAX = 14;
 
 const char TDNAME0[] PROGMEM = "Sensor count";
 const char TDNAME1[] PROGMEM = "Hard press";
@@ -20,7 +20,8 @@ const char TDNAME8[] PROGMEM = "Pressure bias";
 const char TDNAME9[] PROGMEM = "Minimum group";
 const char TDNAME10[] PROGMEM = "Enable adjust";
 const char TDNAME11[] PROGMEM = "Bluetooth";
-const char TDNAME12[] PROGMEM = "Sleep delay";
+const char TDNAME12[] PROGMEM = "SPU Sleep delay";
+const char TDNAME13[] PROGMEM = "CM Sleep delay";
 /* const char TDNAME14[] PROGMEM = "Baseline ratio";
 const char TDNAME15[] PROGMEM = "Load ratio";
 const char TDNAME16[] PROGMEM = "Load point";*/
@@ -38,6 +39,7 @@ const char TDVAR9[] PROGMEM = "minGroup";
 const char TDVAR10[] PROGMEM = "enableAdjust";
 const char TDVAR11[] PROGMEM = "bluetooth";
 const char TDVAR12[] PROGMEM = "sleepDelay";
+const char TDVAR13[] PROGMEM = "wifiSleepDelay";
 
 const char TDDESC0[] PROGMEM = "The number of sensors the device will read from";
 const char TDDESC1[] PROGMEM = "The pressure required to trigger a hard press";
@@ -51,7 +53,8 @@ const char TDDESC8[] PROGMEM = "During auto-calibration, keep soft and hard pres
 const char TDDESC9[] PROGMEM = "Minimum number of hard or soft presses required to auto-calibrate";
 const char TDDESC10[] PROGMEM = "Enable auto-calibration";
 const char TDDESC11[] PROGMEM = "Enable or disable bluetooth";
-const char TDDESC12[] PROGMEM = "How many seconds of inactivity should cause the device to sleep";
+const char TDDESC12[] PROGMEM = "How many seconds of inactivity should cause the sensor processor to sleep";
+const char TDDESC13[] PROGMEM = "How many seconds of inactivity should cause the web server to sleep";
 /*const char TDDESC14[] PROGMEM = "Sensor 1 vs 2 at baseline";
 const char TDDESC15[] PROGMEM = "Sensor 1 vs 2 under load";
 const char TDDESC16[] PROGMEM = "Load threshold";*/
@@ -70,6 +73,7 @@ const TINFO TDESC[TCMAX] PROGMEM = {
 	{ TDNAME10, TDVAR10, 0, 1, TDDESC10 },
 	{ TDNAME11, TDVAR11, 0, 1, TDDESC11 },
 	{ TDNAME12, TDVAR12, 0, 32000, TDDESC12 },
+	{ TDNAME13, TDVAR13, 30, 32000, TDDESC13 },
 /*	{ TDNAME14, 0, 32000, TDDESC14 },
 	{ TDNAME15, 0, 32000, TDDESC15 },
 	{ TDNAME16, 0, 255, TDDESC16 },*/
