@@ -20,9 +20,9 @@
 void (*resetFunc) (void) = 0;
 
 #define  DEV_MODEL       F("vectis")
-#define  GIT_HASH        F("7aaec0c5~")
+#define  GIT_HASH        F("70f8d28a~")
 
-#define  MAGIC           26  /* To detect if flash has been initialized */
+#define  MAGIC           29  /* To detect if flash has been initialized */
 #define  STRBUF          512 /* Buffer size for programming string */
 #define  SAMP            50  /* For array allocation */
 #define  MAXSENS         2   /* For uarray allocation */
@@ -31,7 +31,7 @@ void (*resetFunc) (void) = 0;
 
 #include "device.h"
 
-int tunables[] = { 2, 115, 95, 300, 1, 30, 0, 50, 20, 15, 0, 0, 900, 60/*, 0, 0, 150*/ };
+int tunables[] = { 2, 115, 95, 300, 1, 30, 0, 50, 20, 15, 0, 0, 900, 60, 0, 10000, 100 };
 
 /* Array mapped to legible pointer names */
 int *numSensors = &tunables[0];
@@ -48,8 +48,8 @@ int *enAdj = &tunables[10];
 int *toBLE = &tunables[11];
 int *sleepDelay = &tunables[12];
 int *wifiSleepDelay = &tunables[13];
-/*int *ratio[2] = { &tunables[14], &tunables[15] };
-int *loadPressure = &tunables[16];*/
+int *ratio[2] = { &tunables[14], &tunables[15] };
+int *loadPressure = &tunables[16];
 
 byte debugging = 0;
 char db[20];
@@ -108,7 +108,7 @@ int prompt();
 char* fetchImpulse(byte sensor, byte impulse);
 void parseCmd(char* hidSequence);
 void clearS(byte sensor);
-byte avgS(byte sensor);
+byte avgS(byte sensor, byte dontCount = 0);
 void dumpCapabilities();
 
 /* ===== Main setup, loop, supporting functions ===== */
@@ -280,6 +280,16 @@ void loop() {
   for (byte s = 0; s < *numSensors; s++) { /* Main sensing */
     byte v = analogRead(s) >> 2;
 
+    if (s == 0 && *ratio[0] < 0) v -= *ratio[0];
+    if (s == 1 && *ratio[0] > 0) v += *ratio[0];
+
+    if (s == 1) {
+      float cal;
+      cal = (float) *ratio[1] / (float) 10000;
+      cal *= (float) v;
+      v = (byte) cal;
+    }
+
     if ((lastImpulse[s] != 0) && (v < *softP)) { /* Ending */
       sensorMask |= (1 << s);
       byte avg = avgS(s);
@@ -432,30 +442,26 @@ skip:
         Serial1.print('\n');
         break;
 
-      /*case 20: / Collect baseline /
+      case 20: /* Collect baseline */
         for (sp = 0; sp < SAMP; sp++) {
           for (byte s = 0; s < *numSensors; s++) impulseBuffer[s][sp] = analogRead(s) >> 2;
           delay(10);
         }
         
-        float nf = avgS(0);
-        clearS(0);
-
-        nf /= (float) avgS(1);
-        clearS(1);
-
-        nf *= 10000;
-        *ratio[0] = (int) nf;
+        float nf;
+        *ratio[0] = avgS(0, 255) - avgS(1, 255);
+        
         while ((analogRead(0) >> 2) < *loadPressure) delay(10);
+        delay(10000);
         for (sp = 0; sp < SAMP; sp++) {
           for (byte s = 0; s < *numSensors; s++) impulseBuffer[s][sp] = analogRead(s) >> 2;
           delay(10);
         }
         
-        nf = avgS(0);
+        nf = (float) (avgS(0, 255));
         clearS(0);
 
-        nf /= (float) avgS(1);
+        nf /= (float) (avgS(1, 255) + *ratio[0]);
         clearS(1);
 
         nf *= 10000;
@@ -464,7 +470,8 @@ skip:
         Serial1.print(',');
         Serial1.print(*ratio[1]);
         Serial1.print('\n');
-        break;*/
+        break;
+
       case 21: /* Reset ID */
         while (analogRead(0) < 100) delay(150);
         delay(500);
@@ -515,11 +522,11 @@ void clearS(byte sensor) { /* Clear out averaging buffer */
   for (byte c = 0; c < SAMP; c++) impulseBuffer[sensor][c] = 0;
 }
 
-byte avgS(byte sensor) { /* Compute average for gathered samples */
+byte avgS(byte sensor, byte dontCount = 0) { /* Compute average for gathered samples */
   long ttl = 0;
   byte t = 0;
   for (byte c = 0; c < SAMP; c++)
-    if (impulseBuffer[sensor][c] != 0) {
+    if (impulseBuffer[sensor][c] != dontCount) {
       ttl += impulseBuffer[sensor][c];
       t++;
     }

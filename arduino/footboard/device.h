@@ -1,12 +1,12 @@
 typedef struct {
   const char *name;
   const char *var;
-  uint16_t min;
-  uint16_t max;
+  int16_t min;
+  int16_t max;
   const char *desc;
 } TINFO;
 
-const byte TCMAX = 14;
+const byte TCMAX = 17;
 
 const char TDNAME0[] PROGMEM = "Sensor count";
 const char TDNAME1[] PROGMEM = "Hard press";
@@ -22,9 +22,9 @@ const char TDNAME10[] PROGMEM = "Enable adjust";
 const char TDNAME11[] PROGMEM = "Bluetooth";
 const char TDNAME12[] PROGMEM = "SPU Sleep delay";
 const char TDNAME13[] PROGMEM = "CM Sleep delay";
-/* const char TDNAME14[] PROGMEM = "Baseline ratio";
+const char TDNAME14[] PROGMEM = "Baseline ratio";
 const char TDNAME15[] PROGMEM = "Load ratio";
-const char TDNAME16[] PROGMEM = "Load point";*/
+const char TDNAME16[] PROGMEM = "Load point";
 
 const char TDVAR0[] PROGMEM = "sensorCount";
 const char TDVAR1[] PROGMEM = "hardPress";
@@ -40,6 +40,9 @@ const char TDVAR10[] PROGMEM = "enableAdjust";
 const char TDVAR11[] PROGMEM = "bluetooth";
 const char TDVAR12[] PROGMEM = "sleepDelay";
 const char TDVAR13[] PROGMEM = "wifiSleepDelay";
+const char TDVAR14[] PROGMEM = "ratio[0]";
+const char TDVAR15[] PROGMEM = "ratio[1]";
+const char TDVAR16[] PROGMEM = "loadPressure";
 
 const char TDDESC0[] PROGMEM = "The number of sensors the device will read from";
 const char TDDESC1[] PROGMEM = "The pressure required to trigger a hard press";
@@ -55,9 +58,9 @@ const char TDDESC10[] PROGMEM = "Enable auto-calibration";
 const char TDDESC11[] PROGMEM = "Enable or disable bluetooth";
 const char TDDESC12[] PROGMEM = "How many seconds of inactivity should cause the sensor processor to sleep";
 const char TDDESC13[] PROGMEM = "How many seconds of inactivity should cause the web server to sleep";
-/*const char TDDESC14[] PROGMEM = "Sensor 1 vs 2 at baseline";
+const char TDDESC14[] PROGMEM = "Sensor 1 vs 2 at baseline";
 const char TDDESC15[] PROGMEM = "Sensor 1 vs 2 under load";
-const char TDDESC16[] PROGMEM = "Load threshold";*/
+const char TDDESC16[] PROGMEM = "Load threshold";
 
 const TINFO TDESC[TCMAX] PROGMEM = {
 	{ TDNAME0, TDVAR0, 1, 2, TDDESC0 },
@@ -74,7 +77,7 @@ const TINFO TDESC[TCMAX] PROGMEM = {
 	{ TDNAME11, TDVAR11, 0, 1, TDDESC11 },
 	{ TDNAME12, TDVAR12, 0, 32000, TDDESC12 },
 	{ TDNAME13, TDVAR13, 30, 32000, TDDESC13 },
-/*	{ TDNAME14, 0, 32000, TDDESC14 },
-	{ TDNAME15, 0, 32000, TDDESC15 },
-	{ TDNAME16, 0, 255, TDDESC16 },*/
+	{ TDNAME14, TDVAR14, -100, 100, TDDESC14 },
+	{ TDNAME15, TDVAR15, 0, 32000, TDDESC15 },
+	{ TDNAME16, TDVAR16, 0, 255, TDDESC16 },
 };
