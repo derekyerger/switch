@@ -26,7 +26,7 @@ function doText(e) {
 }
 
 function keepAlive() {
-	retr("keepAlive", null);
+	$.post( "/index.php", { f: "keepAlive", d: null });
 }
 
 function getPart() {
@@ -238,7 +238,7 @@ function ping(a) {
 		if (lastCmds.length > 10) lastCmds.shift();
 		populateLastCmds();
 
-		if ($('.note:visible h4:contains("Blank device detected")').parents('.note').hide(300).length) {
+		if ($('.note:visible h4:contains("Blank device detected")').parents('.note').hide(300).length && !$('h4:contains("Command history")').length) {
 			/* Welcome mode */
 			retr("component", "command-history");
 			setTimeout(function() {

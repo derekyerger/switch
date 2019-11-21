@@ -9,4 +9,6 @@ class Js {
 		return self::$accumulator;
 	}
 }
+
+if (!file_exists('profiles')) file_put_contents('profiles', '');
 ?>
