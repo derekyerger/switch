@@ -1,0 +1,3 @@
+#!/bin/bash
+[ -e /src/arduino-1.8.5/arduino ] && /src/arduino-1.8.5/arduino --upload --board adafruit:avr:feather32u4 --port /dev/ttyACM0 -v midi-ble-menu.ino 
+[ -e ~/arduino-1.8.9/arduino ] && ~/arduino-1.8.9/arduino --upload --board adafruit:avr:feather32u4 --port /dev/ttyACM0 -v midi-ble-menu.ino 
