@@ -149,6 +149,14 @@ function delBond() {
 }
 
 function retr(cmd, data) {
+	
+	if (cmd == "page" && data != "Home.status" && (pressureSlider.length > 0 || pressureChart !== null)) {
+		ajaxRetFn = "retr('" + cmd + "','" + data + "');";
+		pressureSlider = [];
+		pressureChart = null;
+		retr("stopMonitor", null);
+		return;
+	}
 	clearTimeout(spinHandle);
 	spinHandle = setTimeout(spinnerStart, 150); /* Only start spinner if we're taking too long */
 	var txObj = { f: cmd, d: data };
@@ -162,11 +170,6 @@ function retr(cmd, data) {
 					$('.navbar-toggle').click();
 
 				unping();
-				if (data != "Home.status" && (pressureSlider.length > 0 || pressureChart !== null)) {
-					retr("stopMonitor", null);
-					pressureSlider = [];
-					pressureChart = null;
-				}
 			}
 			
 			if (cmd == "get") {
@@ -215,6 +218,7 @@ var pressureChart = null;
 var pressureCount = 0;
 var softP;
 var hardP;
+var floorP;
 var doPlot;
 
 function ping(a) {
@@ -292,6 +296,7 @@ function ping(a) {
 		if ((chart = $('#pressure-chart')).length == 1) {
 			softP = parseInt(a.substr(1,2), 16);
 			hardP = parseInt(a.substr(3,2), 16);
+			floorP = parseInt(a.substr(5,2), 16);
 		}
 	} else if (a == "Z") {
 		swal("Sleep", "The device has gone to sleep. Press and hold it for 8 seconds to wake up.", "warning");

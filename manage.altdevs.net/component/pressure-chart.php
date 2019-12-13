@@ -14,6 +14,7 @@ doPlot = function() {
 		},
 		yaxis: {
 			min: 0,
+			max: hardP + 20,
 			tickColor: COLOR_GREY_LIGHTER,
 			tickLength: 5
 		},
@@ -27,7 +28,8 @@ doPlot = function() {
 			backgroundColor: COLOR_SILVER_LIGHTER,
 			markings: [
 				{ color: '#666', lineWidth:2, yaxis: { from: softP, to: softP } },
-				{ color: '#666', lineWidth:2, yaxis: { from: hardP, to: hardP } }
+				{ color: '#666', lineWidth:2, yaxis: { from: hardP, to: hardP } },
+				{ color: '#600', lineWidth:2, yaxis: { from: floorP, to: floorP } }
 			]
 		},
 		legend: {

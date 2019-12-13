@@ -20,9 +20,9 @@
 void (*resetFunc) (void) = 0;
 
 #define  DEV_MODEL       F("vectis")
-#define  GIT_HASH        F("0dbbb55c~")
+#define  GIT_HASH        F("fb5a2d13~")
 
-#define  MAGIC           30  /* To detect if flash has been initialized */
+#define  MAGIC           31  /* To detect if flash has been initialized */
 #define  STRBUF          512 /* Buffer size for programming string */
 #define  SAMP            50  /* For array allocation */
 #define  MAXSENS         2   /* For uarray allocation */
@@ -39,7 +39,7 @@ void (*resetFunc) (void) = 0;
 
 #include "device.h"
 
-int tunables[] = { 2, 115, 95, 600, 1, 30, 100, 50, 20, 5, 40, 1, 0, 900, 60, 0, 10000, 100 };
+int tunables[] = { 2, 115, 95, 600, 5, 15, 100, 50, 30, 5, 100, 10, 1, 0, 900, 60, 0, 10000, 100 };
 
 /* Array mapped to legible pointer names */
 int *numSensors = &tunables[0];
@@ -53,12 +53,13 @@ int *avgWin = &tunables[7];
 int *biasP = &tunables[8];
 int *minGrp = &tunables[9];
 int *adjWin = &tunables[10];
-int *enAdj = &tunables[11];
-int *toBLE = &tunables[12];
-int *sleepDelay = &tunables[13];
-int *wifiSleepDelay = &tunables[14];
-int *ratio[2] = { &tunables[15], &tunables[16] };
-int *loadPressure = &tunables[17];
+int *floorWindow = &tunables[11];
+int *enAdj = &tunables[12];
+int *toBLE = &tunables[13];
+int *sleepDelay = &tunables[14];
+int *wifiSleepDelay = &tunables[15];
+int *ratio[2] = { &tunables[16], &tunables[17] };
+int *loadPressure = &tunables[18];
 
 byte debugging = 0;
 char db[20];
@@ -84,7 +85,8 @@ byte impulse;
 byte sensorMask;
 byte readImpulse;
 boolean captureS1 = false;
-int floorP = 255;
+float floorP = (float) *softP;
+int floorInterval = 0;
 
 int haptic = 0;
 bool haptic2;
@@ -100,7 +102,7 @@ calibrLL* cLLfirst = &cLL[0];
 byte cLLptr;
 
 void insertLL(byte val); /* Insert sorted replacing oldest */
-void updateCalibration(); /* Update soft/hard values based on entries */
+void updateCalibration(int curVal = 0, bool verbose = 1); /* Update soft/hard values based on entries */
 
 struct clist {
   byte count;
@@ -181,6 +183,7 @@ void setupIface(byte init) {
 }
 
 void setupLowPower() {
+  saveValues();
   Serial1.print("Z\n");
   delay(500);
   if (!lastIf) Keyboard.end();
@@ -309,7 +312,11 @@ void loop() {
       v = (byte) cal;
     }
 
-    floorP = min(floorP, v);
+    if (!s) floorInterval = (floorInterval + 1) % *floorWindow;
+    if (!floorInterval) {
+      insertLL(v);
+      updateCalibration(v, s == 0);
+    }
 
     if ((lastImpulse[s] != 0) && (v < *softP)) { /* Ending */
       sensorMask |= (1 << s);
@@ -407,7 +414,8 @@ skip:
         Serial1.print('\n');
         break;
 
-      case 3: /* Temporary program */
+      case 3: /* Save program */
+        saveValues();
         Serial1.readStringUntil('\n').toCharArray(pString, STRBUF);
         break;
 
@@ -428,6 +436,7 @@ skip:
         tunables[sp] = Serial1.readStringUntil('\n').toInt();
         if (&tunables[sp] == toBLE) setupIface();
         Serial1.print("\n");
+        saveValues();
         break;
 
       case 9: /* Get power source */
@@ -480,7 +489,7 @@ skip:
         *ratio[0] = avgS(0, 255) - avgS(1, 255);
         
         while ((analogRead(0) >> 2) < *loadPressure) delay(10);
-        delay(10000);
+        delay(1000);
         for (sp = 0; sp < SAMP; sp++) {
           for (byte s = 0; s < *numSensors; s++) impulseBuffer[s][sp] = analogRead(s) >> 2;
           delay(10);
@@ -498,6 +507,7 @@ skip:
         Serial1.print(',');
         Serial1.print(*ratio[1]);
         Serial1.print('\n');
+        saveValues();
         break;
 
       case 21: /* Reset ID */
@@ -625,7 +635,7 @@ void insertLL(byte val) {
   }
 }
 
-void updateCalibration() {
+void updateCalibration(int curVal = 0, bool verbose = 1) {
   /* Count members of each group */
   clist gCt[2];
   gCt[1].count = 0;
@@ -678,9 +688,18 @@ void updateCalibration() {
   }
   if (debugging) Serial1.print(";");
 
+  if (*enAdj && curVal != 0) {
+    if (curVal > *softP) floorP++;
+    else floorP = ((float) min(floorP, curVal) * (float) *floorWindow + curVal) / ((float) *floorWindow + 1);
+  }
   if (*enAdj && *softP > floorP + *biasP) {
     *softP = *softP - 1;
-    *hardP = *hardP - 1;
+    if (*hardP - *softP > *biasP) *hardP = *hardP - 1;
+  }
+  if (*enAdj && floorP > *softP - *biasP) {
+    *softP = floorP + *biasP;
+    if (*hardP - *softP < *biasP)
+      *hardP = *softP + *biasP;
   }
   if (*enAdj && gCt[0].count > *minGrp && gCt[1].count > *minGrp) {
     byte dta = (gCt[1].median - gCt[0].median) / 2;
@@ -698,10 +717,11 @@ void updateCalibration() {
       sprintf(db, "%d,%d", *softP, *hardP);
       Serial1.print(db);
     }
-    if (monitor) {
+    if (monitor && verbose) {
       Serial1.write( '^' );
       Serial1.print(*softP, HEX);
       Serial1.print(*hardP, HEX);
+      Serial1.print((int) floorP, HEX);
       Serial1.print('\n');
     }
   }
