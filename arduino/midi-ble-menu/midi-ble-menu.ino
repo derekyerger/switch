@@ -37,8 +37,9 @@ const char *tunablesDesc[] = { "Operating mode",
                                "Minimum activation",
                                "Minimum activation 2",
                                "Delay between samples (ms)",
-                               "Scale range"};
-int tunables[] = { 1, 0, 240, 40, 420, 300, 50, 20, 10, 8 };
+                               "Scale range",
+                               "Start note"};
+int tunables[] = { 1, 0, 240, 40, 420, 300, 50, 20, 10, 8, 60 };
 
 /* Array mapped to legible pointer names */
 int *mode = &tunables[0];
@@ -49,6 +50,7 @@ int *minAct = &tunables[6];
 int *minAct2 = &tunables[7];
 int *sampdelay = &tunables[8];
 int *scale = &tunables[9];
+int *startnote = &tunables[10];
 
 int adx = 0;
 int programming;
@@ -154,6 +156,7 @@ void setup() {
   //ble.sendCommandCheckOK("AT+GAPSTARTADV");
   //delay(1000);
   midi.begin(true);
+  ble.setMode(BLUEFRUIT_MODE_DATA);
 }
 
 void loop() {
@@ -198,7 +201,7 @@ void loop() {
           if (diff % 12 == 8) diff--;
           if (diff % 12 == 10) diff--;
         }
-        int pitch = 60 + diff;
+        int pitch = *startnote + diff;
         if (!note || (*mode == 1 && pitch != note)) {
           if (note) {
             if (programming == -1 && Serial) Serial.print("off: ");
@@ -287,6 +290,40 @@ void loop() {
   }
   if (programming == -1 && Serial.available() > 0) {
     programming = 99;
+  }
+  while (ble.available()) {
+    int c = ble.read();
+    switch (c - 48) {
+      case 0:
+        ble.println("Changed mode to single note, one octave, major.");
+        *mode = 0;
+        *scale = 8;
+        break;
+
+      case 1:
+        ble.println("Changed mode to multi note, one octave, major.");
+        *mode = 1;
+        *scale = 8;
+        break;
+
+      case 2:
+        ble.println("Changed mode to multi note, one octave.");
+        *mode = 1;
+        *scale = 12;
+        break;
+
+      case 3:
+        ble.println("Changed mode to multi note, two octaves.");
+        *mode = 1;
+        *scale = 24;
+        break;
+
+      case 4:
+        ble.println("Changed mode to multi note, three octaves.");
+        *mode = 1;
+        *scale = 36;
+        break;
+    }
   }
 }
 
