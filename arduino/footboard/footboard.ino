@@ -20,7 +20,7 @@
 void (*resetFunc) (void) = 0;
 
 #define  DEV_MODEL       F("vectis")
-#define  GIT_HASH        F("70f8d28a~")
+#define  GIT_HASH        F("572ac07e~")
 
 #define  MAGIC           29  /* To detect if flash has been initialized */
 #define  STRBUF          512 /* Buffer size for programming string */
@@ -28,6 +28,12 @@ void (*resetFunc) (void) = 0;
 #define  MAXSENS         2   /* For uarray allocation */
 #define  MONITORINTERVAL 100 /* During sensor monitoring */
 #define  BATTPOWER       650 /* Analog level, below which is battery power */
+
+#define  LED1   5
+#define  LED2   6
+#define  HAPTIC 10
+#define  BEEP   12
+#define  RPI    22
 
 #include "device.h"
 
@@ -75,6 +81,9 @@ byte impulse;
 byte sensorMask;
 byte readImpulse;
 boolean captureS1 = false;
+
+int haptic = 0;
+bool haptic2;
 
 /* Linked list averaging mechanism */
 struct calibrLL {
@@ -136,7 +145,7 @@ void setupIface(byte init) {
   lastIf = *toBLE;
   if (!init && !lastIf) Keyboard.end();
   if (*toBLE) {
-    digitalWrite(6, LOW);
+    digitalWrite(LED2, LOW);
     ble.echo(false);
     ble.sendCommandCheckOK("AT+BleHIDEn=On");
     ble.sendCommandCheckOK("AT+BleKeyboardEn=On");
@@ -145,26 +154,26 @@ void setupIface(byte init) {
     ble.sendCommandCheckOK("AT+BLEKEYBOARDCODE=00-00");
     ble.reset();
     battery.begin(true);
-    digitalWrite(12, LOW);
+    digitalWrite(BEEP, LOW);
     delay(150);
-    digitalWrite(12, HIGH);
+    digitalWrite(BEEP, HIGH);
     delay(150);
-    digitalWrite(12, LOW);
+    digitalWrite(BEEP, LOW);
     delay(150);
-    digitalWrite(12, HIGH);
+    digitalWrite(BEEP, HIGH);
     delay(550);
-    digitalWrite(6, HIGH);
+    digitalWrite(LED2, HIGH);
   } else {
-    digitalWrite(5, LOW);
+    digitalWrite(LED1, LOW);
     Keyboard.begin();
     ble.sendCommandCheckOK("AT+GAPCONNECTABLE=0");
     ble.sendCommandCheckOK("AT+GAPDISCONNECT");
     ble.sendCommandCheckOK("AT+GAPSTOPADV");
-    digitalWrite(12, LOW);
+    digitalWrite(BEEP, LOW);
     delay(150);
-    digitalWrite(12, HIGH);
+    digitalWrite(BEEP, HIGH);
     delay(850);
-    digitalWrite(5, HIGH);
+    digitalWrite(LED1, HIGH);
   }
 }
 
@@ -175,14 +184,14 @@ void setupLowPower() {
   ble.sendCommandCheckOK("AT+GAPCONNECTABLE=0");
   ble.sendCommandCheckOK("AT+GAPDISCONNECT");
   ble.sendCommandCheckOK("AT+GAPSTOPADV");
-  digitalWrite(22, LOW);
+  digitalWrite(RPI, LOW);
   USBCON = 0;
 }
 
 void teardownLowPower() {
   setupIface(1);
   captureS1 = true; /* If waking up, ignore next */
-  digitalWrite(22, HIGH);
+  digitalWrite(RPI, HIGH);
   powerSaving = false;
   Serial1.print("z\n");
   powerSavingTime = millis();
@@ -191,14 +200,21 @@ void teardownLowPower() {
 }
 
 void setup() {
-  pinMode(5, OUTPUT);
-  pinMode(6, OUTPUT);
-  pinMode(12, OUTPUT);
-  pinMode(22, OUTPUT);
-  digitalWrite(5, HIGH);
-  digitalWrite(6, HIGH);
-  digitalWrite(12, HIGH);
-  digitalWrite(22, HIGH);
+  pinMode(LED1, OUTPUT);
+  pinMode(LED2, OUTPUT);
+  pinMode(HAPTIC, OUTPUT);
+  pinMode(BEEP, OUTPUT);
+  pinMode(RPI, OUTPUT);
+  digitalWrite(LED1, HIGH);
+  digitalWrite(LED2, HIGH);
+  digitalWrite(BEEP, HIGH);
+  digitalWrite(RPI, HIGH);
+  analogWrite(HAPTIC, 0);
+
+  /* Timer interrupt for haptic */
+  OCR0A = 0xAF;
+  TIMSK0 |= _BV(OCIE0A);
+
   Serial1.begin(115200); /* Side channel control */
   adx = 0;
   val = (EEPROM.read(adx) << 8) + EEPROM.read(adx + 1);
@@ -206,9 +222,9 @@ void setup() {
   byte resetCt = 0;
   while (analogRead(0) > 400) {
     if (resetCt++ > 6) break;
-    digitalWrite(12, LOW);
+    digitalWrite(BEEP, LOW);
     delay(150);
-    digitalWrite(12, HIGH);
+    digitalWrite(BEEP, HIGH);
     delay(350);
   }
   if (val != MAGIC || resetCt > 6) {
@@ -305,6 +321,8 @@ void loop() {
         impulse = 2;
       } else if (avg >= *hardP) impulse |= 1;
 
+      haptic = 0;
+      haptic2 = 0;
       readImpulse = *settleTime;
       insertLL(avg);
       updateCalibration();
@@ -321,6 +339,7 @@ void loop() {
       lastImpulse[s] = millis();
       impulseBuffer[s][impulseP[s]] = v;
       impulseP[s] = (impulseP[s] + 1) % *avgWin;
+      haptic = 50;
       if (powerSaving) {
         /* Make sure we wake the interface */
         teardownLowPower();
@@ -328,6 +347,10 @@ void loop() {
     } else if (lastImpulse[s] != 0) { /* During event, sample */
       impulseBuffer[s][impulseP[s]] = v;
       impulseP[s] = (impulseP[s] + 1) % *avgWin;
+      if (!haptic2 && (millis() - lastImpulse[s] >= *longP)) {
+        haptic = 300;
+        haptic2 = 1;
+      } else if (!haptic2 && (avgS(s) >= *hardP)) haptic = 300;
     } else if (analogRead(A5) < BATTPOWER) {
       if (!batteryPower) {
         batteryPower = 1;
@@ -340,13 +363,13 @@ void loop() {
         //LowPower.idle(SLEEP_8S, ADC_OFF, TIMER4_OFF, TIMER3_OFF, TIMER1_OFF, 
         //TIMER0_OFF, SPI_OFF, USART1_OFF, TWI_OFF, USB_OFF);
       } else if (millis() - wifiSavingTime > (unsigned long) *wifiSleepDelay * 1000 ) {
-        if (!wifiSaving) digitalWrite(22, LOW); /* Save power */
+        if (!wifiSaving) digitalWrite(RPI, LOW); /* Save power */
         wifiSaving = 1;
       }
     } else if (powerSaving) {
       teardownLowPower();
     } else if (wifiSaving) {
-      digitalWrite(22, HIGH);
+      digitalWrite(RPI, HIGH);
     } else if (batteryPower) {
       batteryPower = 0;
       Serial1.print("p\n");
@@ -492,7 +515,7 @@ skip:
     }
   }
 
-  if (lastBat != millis() >> 16) {
+  /* if (lastBat != millis() >> 16) {
     lastBat = millis() >> 16;
     batlvl = analogRead(A9) - 496;
     if (batlvl < 0) batlvl = 0;
@@ -502,15 +525,15 @@ skip:
       digitalWrite(5, LOW);
       if ((millis() >> 16) % 16 == 0) {
         for (val = 0; val < 3; val++) {
-          digitalWrite(12, LOW);
+          digitalWrite(BEEP, LOW);
           delay(100);
-          digitalWrite(12, HIGH);
+          digitalWrite(BEEP, HIGH);
           delay(200);
         }
       } else delay(900);
       digitalWrite(5, HIGH);
     }
-  }
+  }*/
 
 }
 
@@ -789,7 +812,10 @@ void parseBtCmd(char* hidSequence) { /* Translate to keystrokes */
         case '~': key = 0x29; break;
         case '_': key = 0x2a; break;
         case '!': key = 0x2b; break;
-        case '`': sendBt(buf); delay(250); continue;
+        case '`': {
+          delay(250);
+          continue;
+        }
       }
     }
     skip = 0;
@@ -847,13 +873,14 @@ void parseBtCmd(char* hidSequence) { /* Translate to keystrokes */
     byte j;
     if (key) for (j = 2; j < 8; j++) if (buf[j] == key) dupe = 1;
 
-    if ((bufPtr > 2 && lastmod != mod) || bufPtr == 8 || dupe) {
+    buf[0] = lastmod = mod;
+    buf[bufPtr++] = key;
+    if (bufPtr > 2) {
       sendBt(buf);
       for (j = 0; j < 8; j++) buf[j] = 0;
       bufPtr = 2;
+      mod = 0;
     }
-    buf[0] = lastmod = mod;
-    buf[bufPtr++] = key;
   } while (*(++hidSequence) != ';');
   if (bufPtr > 2) sendBt(buf);
 }
@@ -891,4 +918,21 @@ void dumpSettings() {
       if (i < TCMAX - 1) Serial1.print("&");
   }
   Serial1.print('\n');
+}
+
+// Interrupt is called once a millisecond, 
+SIGNAL(TIMER0_COMPA_vect) {
+  if (haptic < -100) {
+    analogWrite(HAPTIC, 255);
+    haptic++;
+  } else if (haptic < -50) {
+    analogWrite(HAPTIC, 0);
+    haptic++;
+  } else if (haptic < 0) {
+    analogWrite(HAPTIC, 255);
+    haptic++;
+  } else if (haptic) {
+    analogWrite(HAPTIC, 255);
+    haptic--;
+  } else analogWrite(HAPTIC, 0);
 }
