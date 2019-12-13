@@ -6,7 +6,7 @@ typedef struct {
   const char *desc;
 } TINFO;
 
-const byte TCMAX = 17;
+const byte TCMAX = 18;
 
 const char TDNAME0[] PROGMEM = "Sensor count";
 const char TDNAME1[] PROGMEM = "Hard press";
@@ -18,13 +18,14 @@ const char TDNAME6[] PROGMEM = "Debounce time";
 const char TDNAME7[] PROGMEM = "Sample averaging window";
 const char TDNAME8[] PROGMEM = "Pressure bias";
 const char TDNAME9[] PROGMEM = "Minimum group";
-const char TDNAME10[] PROGMEM = "Enable adjust";
-const char TDNAME11[] PROGMEM = "Bluetooth";
-const char TDNAME12[] PROGMEM = "SPU Sleep delay";
-const char TDNAME13[] PROGMEM = "CM Sleep delay";
-const char TDNAME14[] PROGMEM = "Baseline ratio";
-const char TDNAME15[] PROGMEM = "Load ratio";
-const char TDNAME16[] PROGMEM = "Load point";
+const char TDNAME10[] PROGMEM = "Adjust window";
+const char TDNAME11[] PROGMEM = "Enable adjust";
+const char TDNAME12[] PROGMEM = "Bluetooth";
+const char TDNAME13[] PROGMEM = "SPU Sleep delay";
+const char TDNAME14[] PROGMEM = "CM Sleep delay";
+const char TDNAME15[] PROGMEM = "Baseline ratio";
+const char TDNAME16[] PROGMEM = "Load ratio";
+const char TDNAME17[] PROGMEM = "Load point";
 
 const char TDVAR0[] PROGMEM = "sensorCount";
 const char TDVAR1[] PROGMEM = "hardPress";
@@ -36,13 +37,14 @@ const char TDVAR6[] PROGMEM = "debounceTime";
 const char TDVAR7[] PROGMEM = "avgWindow";
 const char TDVAR8[] PROGMEM = "pressureBias";
 const char TDVAR9[] PROGMEM = "minGroup";
-const char TDVAR10[] PROGMEM = "enableAdjust";
-const char TDVAR11[] PROGMEM = "bluetooth";
-const char TDVAR12[] PROGMEM = "sleepDelay";
-const char TDVAR13[] PROGMEM = "wifiSleepDelay";
-const char TDVAR14[] PROGMEM = "ratio[0]";
-const char TDVAR15[] PROGMEM = "ratio[1]";
-const char TDVAR16[] PROGMEM = "loadPressure";
+const char TDVAR10[] PROGMEM = "adjustWindow";
+const char TDVAR11[] PROGMEM = "enableAdjust";
+const char TDVAR12[] PROGMEM = "bluetooth";
+const char TDVAR13[] PROGMEM = "sleepDelay";
+const char TDVAR14[] PROGMEM = "wifiSleepDelay";
+const char TDVAR15[] PROGMEM = "ratio[0]";
+const char TDVAR16[] PROGMEM = "ratio[1]";
+const char TDVAR17[] PROGMEM = "loadPressure";
 
 const char TDDESC0[] PROGMEM = "The number of sensors the device will read from";
 const char TDDESC1[] PROGMEM = "The pressure required to trigger a hard press";
@@ -54,13 +56,14 @@ const char TDDESC6[] PROGMEM = "How long to wait (in ms) after performing an act
 const char TDDESC7[] PROGMEM = "The number of past samples to include in the averaging function";
 const char TDDESC8[] PROGMEM = "During auto-calibration, keep soft and hard presses separated by this delta";
 const char TDDESC9[] PROGMEM = "Minimum number of hard or soft presses required to auto-calibrate";
-const char TDDESC10[] PROGMEM = "Enable auto-calibration";
-const char TDDESC11[] PROGMEM = "Enable or disable bluetooth";
-const char TDDESC12[] PROGMEM = "How many seconds of inactivity should cause the sensor processor to sleep";
-const char TDDESC13[] PROGMEM = "How many seconds of inactivity should cause the web server to sleep";
-const char TDDESC14[] PROGMEM = "Sensor 1 vs 2 at baseline";
-const char TDDESC15[] PROGMEM = "Sensor 1 vs 2 under load";
-const char TDDESC16[] PROGMEM = "Load threshold";
+const char TDDESC10[] PROGMEM = "Calibration history window";
+const char TDDESC11[] PROGMEM = "Enable auto-calibration";
+const char TDDESC12[] PROGMEM = "Enable or disable bluetooth";
+const char TDDESC13[] PROGMEM = "How many seconds of inactivity should cause the sensor processor to sleep";
+const char TDDESC14[] PROGMEM = "How many seconds of inactivity should cause the web server to sleep";
+const char TDDESC15[] PROGMEM = "Sensor 1 vs 2 at baseline";
+const char TDDESC16[] PROGMEM = "Sensor 1 vs 2 under load";
+const char TDDESC17[] PROGMEM = "Load threshold";
 
 const TINFO TDESC[TCMAX] PROGMEM = {
 	{ TDNAME0, TDVAR0, 1, 2, TDDESC0 },
@@ -72,12 +75,13 @@ const TINFO TDESC[TCMAX] PROGMEM = {
 	{ TDNAME6, TDVAR6, 0, 10000, TDDESC6 },
 	{ TDNAME7, TDVAR7, 1, SAMP, TDDESC7 },
 	{ TDNAME8, TDVAR8, 10, 100, TDDESC8 },
-	{ TDNAME9, TDVAR9, 5, 50, TDDESC9 },
-	{ TDNAME10, TDVAR10, 0, 1, TDDESC10 },
+	{ TDNAME9, TDVAR9, 1, 50, TDDESC9 },
+	{ TDNAME10, TDVAR10, 10, CLLMAX, TDDESC10 },
 	{ TDNAME11, TDVAR11, 0, 1, TDDESC11 },
-	{ TDNAME12, TDVAR12, 0, 32000, TDDESC12 },
-	{ TDNAME13, TDVAR13, 30, 32000, TDDESC13 },
-	{ TDNAME14, TDVAR14, -100, 100, TDDESC14 },
-	{ TDNAME15, TDVAR15, 0, 32000, TDDESC15 },
-	{ TDNAME16, TDVAR16, 0, 255, TDDESC16 },
+	{ TDNAME12, TDVAR12, 0, 1, TDDESC12 },
+	{ TDNAME13, TDVAR13, 0, 32000, TDDESC13 },
+	{ TDNAME14, TDVAR14, 30, 32000, TDDESC14 },
+	{ TDNAME15, TDVAR15, -100, 100, TDDESC15 },
+	{ TDNAME16, TDVAR16, 0, 32000, TDDESC16 },
+	{ TDNAME17, TDVAR17, 0, 255, TDDESC17 },
 };

@@ -20,9 +20,9 @@
 void (*resetFunc) (void) = 0;
 
 #define  DEV_MODEL       F("vectis")
-#define  GIT_HASH        F("572ac07e~")
+#define  GIT_HASH        F("0dbbb55c~")
 
-#define  MAGIC           29  /* To detect if flash has been initialized */
+#define  MAGIC           30  /* To detect if flash has been initialized */
 #define  STRBUF          512 /* Buffer size for programming string */
 #define  SAMP            50  /* For array allocation */
 #define  MAXSENS         2   /* For uarray allocation */
@@ -35,9 +35,11 @@ void (*resetFunc) (void) = 0;
 #define  BEEP   12
 #define  RPI    22
 
+#define  CLLMAX 100
+
 #include "device.h"
 
-int tunables[] = { 2, 115, 95, 300, 1, 30, 0, 50, 20, 15, 0, 0, 900, 60, 0, 10000, 100 };
+int tunables[] = { 2, 115, 95, 600, 1, 30, 100, 50, 20, 5, 40, 1, 0, 900, 60, 0, 10000, 100 };
 
 /* Array mapped to legible pointer names */
 int *numSensors = &tunables[0];
@@ -50,12 +52,13 @@ int *debounce = &tunables[6];
 int *avgWin = &tunables[7];
 int *biasP = &tunables[8];
 int *minGrp = &tunables[9];
-int *enAdj = &tunables[10];
-int *toBLE = &tunables[11];
-int *sleepDelay = &tunables[12];
-int *wifiSleepDelay = &tunables[13];
-int *ratio[2] = { &tunables[14], &tunables[15] };
-int *loadPressure = &tunables[16];
+int *adjWin = &tunables[10];
+int *enAdj = &tunables[11];
+int *toBLE = &tunables[12];
+int *sleepDelay = &tunables[13];
+int *wifiSleepDelay = &tunables[14];
+int *ratio[2] = { &tunables[15], &tunables[16] };
+int *loadPressure = &tunables[17];
 
 byte debugging = 0;
 char db[20];
@@ -81,6 +84,7 @@ byte impulse;
 byte sensorMask;
 byte readImpulse;
 boolean captureS1 = false;
+int floorP = 255;
 
 int haptic = 0;
 bool haptic2;
@@ -91,7 +95,6 @@ struct calibrLL {
   byte val;
 };
 
-const int CLLMAX = 100;
 calibrLL cLL[CLLMAX];
 calibrLL* cLLfirst = &cLL[0];
 byte cLLptr;
@@ -260,7 +263,7 @@ void setup() {
   }
 
   Serial1.setTimeout(60000);
-  for (byte p = 0; p < CLLMAX - 1; p++) cLL[p].next = &cLL[p + 1];
+  for (byte p = 0; p < *adjWin - 1; p++) cLL[p].next = &cLL[p + 1];
   lastIf = !*toBLE;
   setupIface(1);
 }
@@ -305,6 +308,8 @@ void loop() {
       cal *= (float) v;
       v = (byte) cal;
     }
+
+    floorP = min(floorP, v);
 
     if ((lastImpulse[s] != 0) && (v < *softP)) { /* Ending */
       sensorMask |= (1 << s);
@@ -613,7 +618,7 @@ void insertLL(byte val) {
       fl |= 16;
     }
   }
-  cLLptr = (cLLptr + 1) % CLLMAX;
+  cLLptr = (cLLptr + 1) % *adjWin;
   if (debugging) {
     Serial1.print(fl);
     Serial1.print(";");
@@ -673,13 +678,22 @@ void updateCalibration() {
   }
   if (debugging) Serial1.print(";");
 
+  if (*enAdj && *softP > floorP + *biasP) {
+    *softP = *softP - 1;
+    *hardP = *hardP - 1;
+  }
   if (*enAdj && gCt[0].count > *minGrp && gCt[1].count > *minGrp) {
     byte dta = (gCt[1].median - gCt[0].median) / 2;
     *hardP = gCt[1].median - dta;
     *softP = gCt[0].median - dta;
+    if (*softP < floorP + *biasP)
+      *softP = floorP + *biasP;
+    
     if (*hardP - *softP < *biasP)
-      *softP = *hardP - *biasP;
+      *hardP = *softP + *biasP;
     if (*softP < 1) *softP = 1;
+  }
+  if (*enAdj) {
     if (debugging) {
       sprintf(db, "%d,%d", *softP, *hardP);
       Serial1.print(db);
