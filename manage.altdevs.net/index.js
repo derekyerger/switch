@@ -11,6 +11,8 @@ var rev = false;
 var ajaxRetFn;
 var ws;
 var beginner;
+var curSensor = -1;
+var curImpulse = -1;
 
 function spinnerStart() {
 	$('.progress-overlay').show();
@@ -30,9 +32,6 @@ function keepAlive() {
 }
 
 function getPart() {
-	var curSensor = locS[$("#ddLocation").text()];
-	var curImpulse = pS[$("#ddImpulse").text()];
-
 	var s = 0;
 	var a = "";
 	var z = programming;
@@ -61,9 +60,6 @@ function setPart(newKeys) {
 		newKeys = $("#keys").val().replace(";", "\\;");
 	if (newKeys == "") newKeys=";";
 
-	var curSensor = locS[$("#ddLocation").text()];
-	var curImpulse = pS[$("#ddImpulse").text()];
-
 	var s = 0;
 	var f = 0;
 	var a = "";
@@ -90,7 +86,7 @@ function setPart(newKeys) {
 	programming = a;
 
 	retr("save", programming);
-	ddSet("none", "");
+	refreshDlg();
 }
 
 function template(pstring) {
@@ -104,7 +100,7 @@ function template(pstring) {
 		cancelButtonClass: "btn-lime",
 		cancelButtonText: "Customize"},
 	function(x) {
-		if (!x) retr("page", "Home.assignments");
+		if (!x) retr("page", "Home");
 	});
 }
 
@@ -160,7 +156,7 @@ function retr(cmd, data) {
 	clearTimeout(spinHandle);
 	spinHandle = setTimeout(spinnerStart, 150); /* Only start spinner if we're taking too long */
 	var txObj = { f: cmd, d: data };
-	$.post( "/index.php", txObj)
+	$.post(" /index.php", txObj)
 		.done(function(rxObj) {
 			clearTimeout(spinHandle);
 			spinnerEnd();
@@ -172,12 +168,7 @@ function retr(cmd, data) {
 				unping();
 			}
 			
-			if (cmd == "get") {
-				
-				ddSet("ddLocation", locMap[ rxObj[1] ]);
-				ddSet("ddImpulse", pMap[ rxObj[2] ]);
-
-			} else if (cmd == "getHelp") {
+			if (cmd == "getHelp") {
 
 				if ($("#cancelHelp").length == 0) return;
 
@@ -220,6 +211,7 @@ var softP;
 var hardP;
 var floorP;
 var doPlot;
+var keepAlive;
 
 function ping(a) {
 	if (a.substr(0,1) == ">") { /* Light up the visual */
@@ -284,8 +276,11 @@ function ping(a) {
 			pressureCount++;
 			doPlot();
 		}
+
 	} else if (a.substr(0,1) == "*") { /* Load program */
+		lastCmds.push(a);
 		programming = a.substr(2);
+		populateLastCmds();
 	} else if (a.substr(0,1) == "@") { /* Impulse */
 		if ((chart = $('#pressure-chart')).length == 1) {
 			pressureChart[1]['data'].push([pressureCount, parseInt(a.substr(1,2), 16)])
@@ -328,16 +323,20 @@ function populateLastCmds() {
 	if (!$(".responsive-device-txt").length) return;
 	var s = "";
 	for (var c in lastCmds) {
-		actionStack = [];
-		var m = seekAction(actionMap, lastCmds[c].substr(2));
-		if (m || lastCmds[c].substr(2) !== ";") {
-			//s = "<p>" + locMapImg[ lastCmds[c][0] + lastCmds[c][1] ] + " " + (m ? m : friendlyKeys(lastCmds[c].substr(2, -1)) ) + "</p>" + s;
-			s = '<div class="btn-group"><p>' + locMapImg[ lastCmds[c][0] + lastCmds[c][1] ] +
-			' &nbsp; ' + (m ? '<button class="btn disabled btn-outline-light btn-xs">' + m + '</button>' : friendlyKeys(lastCmds[c].substr(2))) + 
-			'<button onclick="javascript:proxyAssign(\'' + lastCmds[c][0] + lastCmds[c][1] + '\');" class="btn btn-lime btn-xs">Reassign</button></p></div><br/>' + s;
+		if (lastCmds[c].substr(0, 1) == '*') {
+			s = '<p><button class="btn disabled btn-yellow btn-xs m-r-5 m-b-5">New program: ' + lastCmds[c].substr(1, 1) + '</button></p>' + s;
 		} else {
-			s = '<div class="btn-group"><p>' + locMapImg[ lastCmds[c][0] + lastCmds[c][1] ] +
-			' &nbsp; <button class="btn disabled btn-outline-secondary btn-xs">Unassigned</button><button onclick="javascript:proxyAssign(\'' + lastCmds[c][0] + lastCmds[c][1] + '\');" class="btn btn-primary btn-xs">Assign to action</button></p></div><br/>' + s;
+			actionStack = [];
+			var m = seekAction(actionMap, lastCmds[c].substr(2));
+			if (m || lastCmds[c].substr(2) !== ";") {
+				//s = "<p>" + locMapImg[ lastCmds[c][0] + lastCmds[c][1] ] + " " + (m ? m : friendlyKeys(lastCmds[c].substr(2, -1)) ) + "</p>" + s;
+				s = '<div class="btn-group"><p>' + locMapImg[ lastCmds[c][0] + lastCmds[c][1] ] +
+				' &nbsp; ' + (m ? '<button disabled="disabled" class="btn disabled btn-outline-light btn-xs m-r-5 m-b-5">' + m + '</button>' : friendlyKeys(lastCmds[c].substr(2))) + 
+				'<button onclick="javascript:proxyAssign(\'' + lastCmds[c][0] + lastCmds[c][1] + '\');" class="btn btn-primary btn-xs m-r-5 m-b-5">Reassign</button></p></div><br/>' + s;
+			} else {
+				s = '<div class="btn-group"><p>' + locMapImg[ lastCmds[c][0] + lastCmds[c][1] ] +
+				' &nbsp; <button class="btn disabled btn-outline-secondary btn-xs m-r-5 m-b-5">Unassigned</button><button onclick="javascript:proxyAssign(\'' + lastCmds[c][0] + lastCmds[c][1] + '\');" class="btn btn-primary btn-xs m-r-5 m-b-5">Assign to action</button></p></div><br/>' + s;
+			}
 		}
 	}
 	$(".responsive-device-txt").html(s);
@@ -345,11 +344,12 @@ function populateLastCmds() {
 
 function proxyAssign(cmd) {
 	// if (beginner) $('.panel-title:contains("Device visual")').parents('.panel').children('.panel-body').hide(300);
-	if (!$('.panel-title:contains("Input assignment")').length) retr('component', 'input-assignment');
+	// if (!$('.panel-title:contains("Input assignment")').length) retr('component', 'input-assignment');
 	setTimeout(function() {
-		if (beginner) $('.panel-title:contains("Input assignment")')[0].scrollIntoView();
-		ddSet("ddLocation", locMap[ cmd[0] ]);
-		ddSet("ddImpulse", pMap[ cmd[1] ]);
+		// if (beginner) $('.panel-title:contains("Input assignment")')[0].scrollIntoView();
+		curSensor = cmd[0];
+		curImpulse = cmd[1];
+		refreshDlg();
 		$("#actionDlg").modal("show");
 	}, 300);
 }
@@ -511,36 +511,32 @@ function ddSet(id, txt) {
 	switch (id) {
 		case "ddPlatform":
 			actionMap = $.extend({}, platformMap['*'], platformMap[txt]);
-			/* no break because the dialog muust be rebuilt with the new options */
+			break;
+	}
 
-		default:
-			if ( $("#ddLocation").html() != "Location"
-				&& $("#ddImpulse").html() != "Impulse") {
-				$("#ddAction").removeClass("disabled");
-				$('#ddAction').attr("data-toggle", "modal");
-				$("#popupKbd").hide();
-				/* Find current assignment */
+	refreshDlg();
+}
 
-				var ca = getPart();
-				if (ca) {
-					actionStack = [];
-					var cn = seekAction(actionMap, ca);
-					var c = 0;
-					buildAction();
-					if (!actionStack.length) {
-						nextAction(1, "Custom Keyboard Input");
-						$("#popupKbd").show();
-						popClicks();
-						$("#keys").val(ca);
-					} else while (actionStack.length)
-						nextAction(++c, actionStack.pop());
+function refreshDlg() {
+	if (curSensor >= 0 && curImpulse >= 0) {
+		/* Find current assignment */
 
-					$("#ddAssignment").removeClass("btn-outline-danger disabled").addClass("btn-info").text(cn ? cn : "Custom Key Sequence").attr("data-toggle", "modal");
-				} else {
-					$("#ddAssignment").addClass("btn-outline-danger disabled").removeClass("btn-info").text("Unassigned").removeAttr("data-toggle");
-					buildAction();
-				}
-			}
+		var ca = getPart();
+		if (ca) {
+			actionStack = [];
+			var cn = seekAction(actionMap, ca);
+			var c = 0;
+			buildAction();
+			if (!actionStack.length) {
+				nextAction(1, "Custom Keyboard Input");
+				$("#popupKbd").show();
+				popClicks();
+				$("#keys").val(ca);
+			} else while (actionStack.length)
+				nextAction(++c, actionStack.pop());
+		} else {
+			buildAction();
+		}
 	}
 }
 

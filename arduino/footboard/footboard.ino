@@ -20,7 +20,7 @@
 void (*resetFunc) (void) = 0;
 
 #define  DEV_MODEL       F("vectis")
-#define  GIT_HASH        F("3a1888bd~")
+#define  GIT_HASH        F("f6f73289~")
 
 #define  MAGIC           46  /* To detect if flash has been initialized */
 #define  STRBUF          512 /* Buffer size for programming string */
@@ -76,6 +76,7 @@ byte wifiSaving = 0;
 byte batteryPower = 0;
 unsigned long powerSavingTime = 0;
 unsigned long wifiSavingTime = 0;
+unsigned long monitorTimeout = 0;
 
 int adx = 0;
 int curPgm = 0;
@@ -206,12 +207,15 @@ void loadProgram(int idx) {
   curPgm = idx;
   int adx = sizeof(tunables) + 2;
   for (int i = -1; i < idx; i++) {
-    Serial1.print("*");
-    Serial1.print((char)(i+49));
+    if (i < idx - 1) {
+    }
     int sp = 0;
-    while ((pString[sp++] = EEPROM.read(adx++)) != 0) Serial1.print(pString[sp-1]);
-    Serial1.print('\n');
+    while ((pString[sp++] = EEPROM.read(adx++)) != 0);
   };
+  Serial1.print("*");
+  Serial1.print((char)(idx+48));
+  Serial1.print(pString);
+  Serial1.print('\n');
 }
 
 void setupIface(byte init) {
@@ -468,6 +472,7 @@ void loop() {
     monitorTime = millis();
     monitor = 1;
   }
+  if (monitor && (millis() - monitorTimeout > 10000)) monitor = 0;
   delay(*sampleDelay);
 skip:
   if (Serial1.available() > 0) { /* Side channel command */
@@ -547,6 +552,7 @@ skip:
         Serial1.print(",");
         Serial1.print(*hardP);
         Serial1.print('\n');
+        monitorTimeout = millis();
         break;
 
       case 20: /* Collect baseline */

@@ -104,8 +104,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 			file_put_contents("profiles", json_encode($p));
 			break;
 		
+		case "keepMonitor":
+			$comm->txrxCmd(19, "1\n", 1000);
+			break;
+
 		case "stopMonitor":
 			$comm->txrxCmd(19, "0\n", 1000);
+			print "clearTimeout(keepAlive);";
 			break;
 
 		case "apset":

@@ -49,6 +49,7 @@
 		  color: black;
 		}
 		.panel.panel-expand { z-index: 1040 }
+		.btn-outline-light.disabled { color: #fff; opacity: 1 }
 
 	</style>
 </head>
@@ -159,8 +160,8 @@
 							<span>Home</span>
 						</a>
 						<ul class="sub-menu">
-							<li><a href="javascript:" onclick="retr('page', 'Home.status');">Status only</a></li>
-							<li><a href="javascript:" onclick="retr('page', 'Home.assignments');">Assignments</a></li>
+							<li><a href="javascript:" onclick="retr('page', 'Home.status');">Monitor</a></li>
+							<!--li><a href="javascript:" onclick="retr('page', 'Home.assignments');">Assignments</a></li-->
 						</ul>
 					</li>
 					<li>

@@ -58,6 +58,18 @@ var platformMap = {
 
 	"*": {
 		"Custom Keyboard Input": "%%",
+		"Load program": {
+			"Load program 0": "@0",
+			"Load program 1": "@1",
+			"Load program 2": "@2",
+			"Load program 3": "@3",
+			"Load program 4": "@4",
+			"Load program 5": "@5",
+			"Load program 6": "@6",
+			"Load program 7": "@7",
+			"Load program 8": "@8",
+			"Load program 9": "@9",
+		},
 		"Navigation": {
 			"Left Arrow": "X",
 			"Right Arrow": "W",

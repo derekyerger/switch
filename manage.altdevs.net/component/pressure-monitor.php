@@ -30,6 +30,6 @@ Js::append("
             }   
             pressureSlider.push(new Powerange(this, option));
         }); 
-    }   
+    };
 ");
 ?>

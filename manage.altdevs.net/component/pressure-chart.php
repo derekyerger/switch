@@ -42,5 +42,9 @@ doPlot = function() {
 		}
 	});
 }
+
+keepAlive = setInterval(function() {
+	$.post('/index.php', {f: 'keepMonitor', d: null});
+}, 3000);
 ");
 ?>
