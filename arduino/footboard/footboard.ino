@@ -20,9 +20,9 @@
 void (*resetFunc) (void) = 0;
 
 #define  DEV_MODEL       F("vectis")
-#define  GIT_HASH        F("fb5a2d13~")
+#define  GIT_HASH        F("3a1888bd~")
 
-#define  MAGIC           31  /* To detect if flash has been initialized */
+#define  MAGIC           46  /* To detect if flash has been initialized */
 #define  STRBUF          512 /* Buffer size for programming string */
 #define  SAMP            50  /* For array allocation */
 #define  MAXSENS         2   /* For uarray allocation */
@@ -78,6 +78,7 @@ unsigned long powerSavingTime = 0;
 unsigned long wifiSavingTime = 0;
 
 int adx = 0;
+int curPgm = 0;
 boolean debug;
 byte monitor;
 unsigned long monitorTime;
@@ -129,20 +130,88 @@ void dumpCapabilities();
 Adafruit_BluefruitLE_SPI ble(BLUEFRUIT_SPI_CS, BLUEFRUIT_SPI_IRQ, BLUEFRUIT_SPI_RST);
 Adafruit_BLEBattery battery(ble);
 
-void saveValues() { /* Write all tunables to EEPROM */
+/* void hexdump() {
+  int adx = sizeof(tunables) + 2;
+  int adx2 = adx;
+  int split = 0;
+  for (int i = 0; i < 128; i++) {
+    int v = EEPROM.read(adx++);
+    if (v < 16) Serial1.print('0');
+    Serial1.print(v, HEX);
+    Serial1.print(' ');
+    if (++split % 16 == 0) {
+      Serial1.print(' ');
+      for (int j = 0; j < 16; j++) {
+        char u = EEPROM.read(adx2++);
+        if (u < 32) Serial1.print('.');
+        else Serial1.print(u);
+      }
+      Serial1.print('\n');
+    }
+  }
+} */
+
+void debugEEPROM() { /*
+  int sp;
+  int adx = sizeof(tunables) + 2;
+
+  for (int i = 0; i < 10; i++) {
+    Serial1.print('|');
+    Serial1.print((char)(i+48));
+    char c;
+    while ((c = EEPROM.read(adx++)) != 0) Serial1.print(c);
+    Serial1.print('\n');
+  }
+  hexdump();
+*/; }
+
+
+void saveValues(bool init = false) { /* Write all tunables to EEPROM */
   int adx = 2;
   int sp;
   for (sp = 0; sp < (sizeof(tunables) / sizeof(int)); sp++) {
     EEPROM.update(adx, tunables[sp] >> 8);
     EEPROM.update(adx + 1, tunables[sp]); adx += 2;
   }
+  for (int i = 0; i < curPgm; i++) while (EEPROM.read(adx++) != 0);
+  if (init) {
+    sp = 0;
+    while (pString[sp] != 0) EEPROM.update(adx++, pString[sp++]);
+    while (adx != 1005) EEPROM.update(adx++, 0);
+    return;
+  }
+  /* Find offset to shift rest of data */
+  int adx2 = adx;
+  sp = 0;
+  while (pString[sp++] != 0);
+  while (EEPROM.read(adx2++) != 0);
+  if (adx + sp > adx2) { /* Shift to end */
+    for (int i = 1005; i >= adx + sp; i--) EEPROM.update(i, EEPROM.read(i - adx - sp + adx2));
+  } else if (adx + sp < adx2) { /* Shift to front */
+    for (int i = adx + sp; i < 1005 - sp; i++) EEPROM.update(i + adx + sp - adx2, EEPROM.read(i));
+    for (int i = 1005 - sp; i <= 1005; i++) EEPROM.update(i, 0);
+  }
   sp = 0;
   while (pString[sp] != 0) EEPROM.update(adx++, pString[sp++]);
   EEPROM.update(adx++, 0);
+  debugEEPROM();
 }
 
 void setupIface() {
   setupIface(0);
+}
+
+void loadProgram(int idx) {
+  saveValues();
+  curPgm = idx;
+  int adx = sizeof(tunables) + 2;
+  for (int i = -1; i < idx; i++) {
+    Serial1.print("*");
+    Serial1.print((char)(i+49));
+    int sp = 0;
+    while ((pString[sp++] = EEPROM.read(adx++)) != 0) Serial1.print(pString[sp-1]);
+    Serial1.print('\n');
+  };
 }
 
 void setupIface(byte init) {
@@ -235,7 +304,7 @@ void setup() {
   }
   if (val != MAGIC || resetCt > 6) {
     EEPROM.update(adx, MAGIC >> 8); EEPROM.update(adx + 1, MAGIC);
-    saveValues();
+    saveValues(true);
     ble.factoryReset();
     ble.sendCommandCheckOK("AT+GAPDEVNAME=Vectis");
     ble.sendCommandCheckOK("AT+HWMODELED=DISABLE");
@@ -247,6 +316,7 @@ void setup() {
       adx += 2;
     }
 
+    curPgm = 0;
     sp = 0;
     while ((pString[sp++] = EEPROM.read(adx++)) != 0);
   }
@@ -415,8 +485,8 @@ skip:
         break;
 
       case 3: /* Save program */
-        saveValues();
         Serial1.readStringUntil('\n').toCharArray(pString, STRBUF);
+        saveValues();
         break;
 
       case 4: /* Save to memory */
@@ -794,6 +864,12 @@ void parseCmd(char* hidSequence) { /* Translate to keystrokes */
       case '`':
         delay(250);
         break;
+      
+      /* Special functions: load program */
+      case '@':
+        loadProgram(*(++hidSequence) - 48);
+        goto bail;
+        
       case ';':
         break;
 
@@ -811,6 +887,7 @@ void parseCmd(char* hidSequence) { /* Translate to keystrokes */
     }
     delay(5);
   } while (*(++hidSequence) != ';');
+  bail:
   Keyboard.releaseAll();
 }
 
@@ -850,6 +927,10 @@ void parseBtCmd(char* hidSequence) { /* Translate to keystrokes */
           delay(250);
           continue;
         }
+      case '@':
+        loadProgram(*(++hidSequence) - 48);
+        goto bail2;
+        break;
       }
     }
     skip = 0;
@@ -916,6 +997,7 @@ void parseBtCmd(char* hidSequence) { /* Translate to keystrokes */
       mod = 0;
     }
   } while (*(++hidSequence) != ';');
+  bail2:
   if (bufPtr > 2) sendBt(buf);
 }
 

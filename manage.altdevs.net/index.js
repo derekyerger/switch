@@ -284,6 +284,8 @@ function ping(a) {
 			pressureCount++;
 			doPlot();
 		}
+	} else if (a.substr(0,1) == "*") { /* Load program */
+		programming = a.substr(2);
 	} else if (a.substr(0,1) == "@") { /* Impulse */
 		if ((chart = $('#pressure-chart')).length == 1) {
 			pressureChart[1]['data'].push([pressureCount, parseInt(a.substr(1,2), 16)])
