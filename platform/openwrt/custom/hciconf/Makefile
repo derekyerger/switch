@@ -27,8 +27,10 @@ define Package/hciconf/install
 	$(CP) ./files/etc/* $(1)/etc
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/setbaud.init $(1)/etc/init.d/setbaud
+	$(INSTALL_BIN) ./files/final.init $(1)/etc/init.d/final
 	$(INSTALL_DIR) $(1)/www/hciconf/
-	$(CP) ./files/www/hciconf/* $(1)/www/hciconf/
+	$(INSTALL_DIR) $(1)/usr/bin
+	$(INSTALL_BIN) ./files/tee-ts.sh $(1)/usr/bin
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) ./files/wifi_watchdog $(1)/usr/bin/
 	$(INSTALL_BIN) ./files/delaywifi $(1)/usr/bin/
