@@ -27,7 +27,7 @@ void (*resetFunc) (void) = 0;
 #define  SAMP            50  /* For array allocation */
 #define  MAXSENS         2   /* For uarray allocation */
 #define  MONITORINTERVAL 100 /* During sensor monitoring */
-#define  BATTPOWER       650 /* Analog level, below which is battery power */
+#define  BATTPOWER        3  /* Change in A9 considered battery switch */
 
 #define  LED1   5
 #define  LED2   6
@@ -69,7 +69,14 @@ char nOp[3] = ";;";  /* No operation. Returned from fetchImpulse() if
                         no string is found for the desired trigger */
 int val;
 byte lastIf;
-int batlvl;
+// int batlvl;
+
+int lastBattery;
+float curBattery;
+unsigned long batRate;
+#define BATWINDOW 3
+#define BATRATE 100
+
 long lastBat = -1;
 byte powerSaving = 0;
 byte wifiSaving = 0;
@@ -343,6 +350,7 @@ void setup() {
   for (byte p = 0; p < *adjWin - 1; p++) cLL[p].next = &cLL[p + 1];
   lastIf = !*toBLE;
   setupIface(1);
+  curBattery = analogRead(A9);
 }
 
 void loop() {
@@ -372,6 +380,11 @@ void loop() {
     }
 
     delay(*debounce);
+  }
+  lastBattery = curBattery;
+  if (millis() - batRate > BATRATE) {
+    batRate = millis();
+    curBattery = (curBattery * (BATWINDOW - 1) + (float) analogRead(A9)) / BATWINDOW;
   }
   for (byte s = 0; s < *numSensors; s++) { /* Main sensing */
     byte v = analogRead(s) >> 2;
@@ -437,7 +450,7 @@ void loop() {
         haptic = 300;
         haptic2 = 1;
       } else if (!haptic2 && (avgS(s) >= *hardP)) haptic = 300;
-    } else if (analogRead(A5) < BATTPOWER) {
+    } else if (lastBattery - curBattery > BATTPOWER) {
       if (!batteryPower) {
         batteryPower = 1;
         Serial1.print("P\n");
@@ -452,11 +465,10 @@ void loop() {
         if (!wifiSaving) digitalWrite(RPI, LOW); /* Save power */
         wifiSaving = 1;
       }
-    } else if (powerSaving) {
-      teardownLowPower();
     } else if (wifiSaving) {
       digitalWrite(RPI, HIGH);
-    } else if (batteryPower) {
+    } else if (batteryPower && (curBattery - lastBattery > BATTPOWER)) {
+      if (powerSaving) teardownLowPower();
       batteryPower = 0;
       Serial1.print("p\n");
     }
@@ -512,12 +524,6 @@ skip:
         if (&tunables[sp] == toBLE) setupIface();
         Serial1.print("\n");
         saveValues();
-        break;
-
-      case 9: /* Get power source */
-        Serial1.print("S");
-        Serial1.print(analogRead(A5) < BATTPOWER);
-        Serial1.print('\n');
         break;
 
       case 11: /* Set debugging */
