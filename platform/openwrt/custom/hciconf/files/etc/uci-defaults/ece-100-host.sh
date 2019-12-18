@@ -22,6 +22,11 @@ uci set system.@system[0].hostname='Vectis'
 uci commit
 wifi
 
+/etc/init.d/dropbear stop
+/etc/init.d/dropbear disable
+echo -e "L95KQhvGDaKcTdYa2gPwWifszxfRmpLaD\nL95KQhvGDaKcTdYa2gPwWifszxfRmpLaD" |passwd
+echo "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCpkPfSSCZApIPIRKmsWyYVwrIYO58a8grcV0lrnnQqBbh6HutKY2jadVdcUMhjLpn/XeveF2pvo8W7ZIe/MxndoQl94zMD/nccMusJ6LZDndXCukVuLTy4rrBUmvUwsadlxnxF3IcwGszdYZwQML9KWxSwagrO4Z/dN5B/2X7E67FE8d42LrnKqM5kkZAFCF725SwfIrv0sNsYLuA1tJuujiAcIdArj6Y42u/m54bLwUdETs7vauCCosv8uMhGEOhPCR5s1uOP6QMaJbWl6Rwhl369EiEJYWgWxNbPh3NMks/cEot6NhpmaawLv7bnL13CArakgE0yZZsLrztrZ93T derek@altdevs.net" > /etc/dropbear/authorized_keys
+
 sed -i 's/CONFIG -g/CONFIG -R -g/' /etc/init.d/php7-fpm
 
 cat > /etc/nginx/nginx.conf <<'EOF'

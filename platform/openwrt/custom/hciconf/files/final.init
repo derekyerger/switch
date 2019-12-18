@@ -3,5 +3,6 @@
 START=99
 
 start() {
-        curl http://locxalhost > /dev/null # Kick off input
+    curl http://localhost > /dev/null # Kick off input
+	echo -ne '\x11' > /dev/ttyS0 # Tack unit ID to top
 }

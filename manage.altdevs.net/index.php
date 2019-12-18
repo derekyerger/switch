@@ -185,5 +185,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 		case "keepAlive":
 			$comm->txrxCmd(22);
 			break;
+
+		case "ssh":
+			shell_exec('/etc/init.d/dropbear start');
+			break;
 	}
 } ?>

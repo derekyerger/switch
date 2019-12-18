@@ -18,5 +18,9 @@ sleep 1; wifi
 	done
 	[ $failures -ge 15 ] || {
 		curl 'https://api.altdevs.net/update.php' --data "nonce=$2&ip=$ip"
+		mv /root/log /root/log.pending
+		curl -F 'data=@/root/log.pending' https://api.altdevs.net/log.php
+		rm /root/log.pending
+		echo -ne '\x11' > /dev/ttyS0 # Tack unit ID to top
 	}
 }

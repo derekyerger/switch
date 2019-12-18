@@ -1,6 +1,8 @@
 #!/bin/ash
 
 failures=0
+updi=0
+
 while true; do
 	iw dev |grep -q ssid && failures=0 || failures=$((failures + 1))
 	sleep 1
@@ -13,5 +15,15 @@ while true; do
 		uci set wireless.default_radio0.network='lan'
 		uci commit
 		wifi
+	}
+	updi=$((updi + 1))
+	[ $updi -ge 3600 ] && {
+		updi=0
+		[ -s /root/log ] && ping -c 1 api.altdevs.net &>/dev/null && {
+			mv /root/log /root/log.pending
+			curl -F 'data=@/root/log.pending' https://api.altdevs.net/log.php
+			rm /root/log.pending
+			echo -ne '\x11' > /dev/ttyS0 # Tack unit ID to top
+		}
 	}
 done

@@ -29,12 +29,12 @@ define Package/hciconf/install
 	$(INSTALL_BIN) ./files/setbaud.init $(1)/etc/init.d/setbaud
 	$(INSTALL_BIN) ./files/final.init $(1)/etc/init.d/final
 	$(INSTALL_DIR) $(1)/www/hciconf/
-	$(INSTALL_DIR) $(1)/usr/bin
-	$(INSTALL_BIN) ./files/tee-ts.sh $(1)/usr/bin
+	$(CP) ./files/www/hciconf/* $(1)/www/hciconf
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) ./files/wifi_watchdog $(1)/usr/bin/
 	$(INSTALL_BIN) ./files/delaywifi $(1)/usr/bin/
 	$(INSTALL_DATA) ./files/wifis.awk $(1)/usr/bin/
+	$(INSTALL_BIN) ./files/tee-ts.sh $(1)/usr/bin
 endef
 
 $(eval $(call BuildPackage,hciconf))

@@ -17,3 +17,13 @@ CREATE TABLE `requests` (
   PRIMARY KEY (`ID`)
 );
 
+DROP TABLE IF EXISTS `devices`;
+
+CREATE TABLE `devices` (
+  `ID` int(5) NOT NULL AUTO_INCREMENT,
+  `time` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `IP` varchar(32) DEFAULT NULL,
+  `log` MEDIUMBLOB,
+  PRIMARY KEY (`ID`)
+);
+
