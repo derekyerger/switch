@@ -82,7 +82,6 @@ JS::append("$.extend($.gritter.options, { fade_in_speed: 0 }); if (ws) ws.onmess
 			break;
 		case '>30;':
 		case '>31;':
-		case '>32;':
 			$('.gritter-item-wrapper').remove();
 			$.gritter.add({
 				title: 'Center input',
@@ -91,6 +90,9 @@ JS::append("$.extend($.gritter.options, { fade_in_speed: 0 }); if (ws) ws.onmess
 				sticky: false,
 				time: ''
 			});
+			break;
+		case '>32;':
+			retr('page', 'Home');
 			break;
 	};
 }; ajaxRetFn = 'ajaxRetFn = \"ws.onmessage = function(msg) { ping(msg.data); };\";';");

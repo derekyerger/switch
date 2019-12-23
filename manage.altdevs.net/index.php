@@ -4,14 +4,14 @@ session_start();
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
-	require('header.php');
-
 	$_SESSION['prog'] = http_build_query(fetchProgramming($comm), null, "&", PHP_QUERY_RFC3986);
-
-	require('views/home.php');
 	
 	/* TODO: per-device cache programming */
-	JS::append("deviceData = '" . $_SESSION['prog'] . "'");
+	JS::append("deviceData = '" . $_SESSION['prog'] . "';");
+
+	require('header.php');
+
+	require('views/home.php');
 	
 	require('footer.php');
 

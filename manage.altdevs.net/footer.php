@@ -26,6 +26,7 @@
 	<script src="js/powerange.min.js"></script>
 	<script src="js/js.cookie.js"></script>
 	<script src="js/transparent.min.js"></script>
+	<script src="js/shortcut.js"></script>
 	<script src="js/apps.min.js"></script>
 	<script src="maps.js"></script>
 	<script src="index.js"></script>
@@ -79,6 +80,15 @@
 				}
 			});
 			$('.navbar-brand').focus();
+			shortcut.add("alt+c", function() {
+				calibrate();
+			});
+			shortcut.add("alt+v", function() {
+				retr('page', 'Home');
+			});
+			shortcut.add("alt+x", function() {
+				retr('page', 'Templates');
+			});
 		});
 	</script>
 </body>

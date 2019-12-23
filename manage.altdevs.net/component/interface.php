@@ -12,4 +12,4 @@ ob_start(); ?>
 <button type="button" class="btn btn-primary m-r-5 m-b-5" id="delBond" onclick="delBond();">Clear Bond</button>
 <?php $content = ob_get_clean();
 require('elements/panel.php');
-JS::append("activateElt('interface');"); ?>
+Js::append("activateElt('interface');"); ?>

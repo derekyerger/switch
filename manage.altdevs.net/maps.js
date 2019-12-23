@@ -43,6 +43,8 @@ var keyMap = { "^" : "Ctrl+",
 	"Y": "&darr;",
 	"Z": "&uarr;",
 	"`": "Delay 250ms",
+	"#": "Switch to USB",
+	"$": "Switch to Bluetooth",
 };
 
 var winClip = {
@@ -69,6 +71,9 @@ var platformMap = {
 			"Load program 7": "@7",
 			"Load program 8": "@8",
 			"Load program 9": "@9",
+			"altdevs calibration": "%c",
+			"altdevs templates": "%x",
+			"altdevs home": "%v",
 		},
 		"Navigation": {
 			"Left Arrow": "X",

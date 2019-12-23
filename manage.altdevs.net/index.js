@@ -2,6 +2,7 @@
 
 var spinHandle = null;
 var programming = '';
+var oldprog = null;
 var deviceData = '';
 var helpSeq, oldNavBrand, helpHandle = null;
 var pingCt = 0;
@@ -166,9 +167,18 @@ function retr(cmd, data) {
 					$('.navbar-toggle').click();
 
 				unping();
+				
+				if (data != 'Calibration' && oldprog) {
+					retr('save', oldprog);
+					oldprog = null;
+				}
 			}
 			
-			if (cmd == "getHelp") {
+			if (cmd == "get") {
+
+				proxyAssign(rxObj[1] + rxObj[2]);
+
+			} else if (cmd == "getHelp") {
 
 				if ($("#cancelHelp").length == 0) return;
 
@@ -321,6 +331,13 @@ function ping(a) {
 
 function populateLastCmds() {
 	if (!$(".responsive-device-txt").length) return;
+
+	/* note current focus */
+	var lp = null;
+	var cb = null;
+	if ((cb = $("button.assignable:focus")).length) {
+		lp = $("div.panel-heading > h4:contains('Command history')").closest("div.panel").find('button.btn-primary').index(cb);
+	}
 	var s = "";
 	for (var c in lastCmds) {
 		if (lastCmds[c].substr(0, 1) == '*') {
@@ -332,14 +349,21 @@ function populateLastCmds() {
 				//s = "<p>" + locMapImg[ lastCmds[c][0] + lastCmds[c][1] ] + " " + (m ? m : friendlyKeys(lastCmds[c].substr(2, -1)) ) + "</p>" + s;
 				s = '<div class="btn-group"><p>' + locMapImg[ lastCmds[c][0] + lastCmds[c][1] ] +
 				' &nbsp; ' + (m ? '<button disabled="disabled" class="btn disabled btn-outline-light btn-xs m-r-5 m-b-5">' + m + '</button>' : friendlyKeys(lastCmds[c].substr(2))) + 
-				'<button onclick="javascript:proxyAssign(\'' + lastCmds[c][0] + lastCmds[c][1] + '\');" class="btn btn-primary btn-xs m-r-5 m-b-5">Reassign</button></p></div><br/>' + s;
+				'<button onclick="javascript:proxyAssign(\'' + lastCmds[c][0] + lastCmds[c][1] + '\');" class="btn btn-primary btn-xs m-r-5 m-b-5 assignable">Reassign</button></p></div><br/>' + s;
 			} else {
 				s = '<div class="btn-group"><p>' + locMapImg[ lastCmds[c][0] + lastCmds[c][1] ] +
-				' &nbsp; <button class="btn disabled btn-outline-secondary btn-xs m-r-5 m-b-5">Unassigned</button><button onclick="javascript:proxyAssign(\'' + lastCmds[c][0] + lastCmds[c][1] + '\');" class="btn btn-primary btn-xs m-r-5 m-b-5">Assign to action</button></p></div><br/>' + s;
+				' &nbsp; <button class="btn disabled btn-outline-secondary btn-xs m-r-5 m-b-5">Unassigned</button><button onclick="javascript:proxyAssign(\'' + lastCmds[c][0] + lastCmds[c][1] + '\');" class="btn btn-primary btn-xs m-r-5 m-b-5 assignable">Assign to action</button></p></div><br/>' + s;
 			}
 		}
 	}
-	$(".responsive-device-txt").html(s);
+	$(".responsive-device-txt").html('<p><button onclick="javascript:retr(\'get\');" class="btn btn-primary btn-s m-r-5 m-b-5 assignable">Assign next input</button></p>' + s);
+
+	/* Refocus */
+	//if (lp !== null) $("div.panel-heading > h4:contains('Command history')").closest("div.panel").find('button.btn-primary').eq(lp+1).focus();
+	if (lp !== null) {
+		if (lp === 0 || lp == lastCmds.length) $("div.panel-heading > h4:contains('Command history')").closest("div.panel").find('button.btn-primary').eq(0).focus();
+		else $("#ddPlatform").focus();
+	}
 }
 
 function proxyAssign(cmd) {
@@ -520,6 +544,7 @@ function ddSet(id, txt) {
 function refreshDlg() {
 	if (curSensor >= 0 && curImpulse >= 0) {
 		/* Find current assignment */
+		$("#popupKbd").hide();
 
 		var ca = getPart();
 		if (ca) {
@@ -748,15 +773,8 @@ function profileRemove() {
 }
 
 function calibrate() {
-	swal({
-		title: "Calibration",
-		text: "Entering calibration mode will clear any temporary configuration. Continue?",
-		type: "warning",
-		showCancelButton: true,
-		cancelButtonClass: "btn-lime"},
-	function(x) {
-		if (x) retr("page", "Calibration");
-	});
+	oldprog = programming;
+	retr("page", "Calibration");
 }
 
 var findDeviceTimer;

@@ -1,6 +1,6 @@
 <?php
 function fetchProgramming(comms\Device $comm) {
-	$v = explode("&", substr($comm->txrxCmd(1, "", 1000), 1), 14);
+	$v = explode("&", substr($comm->txrxCmd(1, "", 1000), 1));
 	if (count($v) == 1) return [];
 	
 	$a = [];

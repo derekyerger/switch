@@ -9,7 +9,6 @@
 #include "Adafruit_BLE.h"
 #include "Adafruit_BluefruitLE_SPI.h"
 #include "Adafruit_BluefruitLE_UART.h"
-#include "Adafruit_BLEBattery.h"
 
 #include "BluefruitConfig.h"
 
@@ -20,7 +19,7 @@
 void (*resetFunc) (void) = 0;
 
 #define  DEV_MODEL       F("vectis")
-#define  GIT_HASH        F("6390b6bb~")
+#define  GIT_HASH        F("bd7f2a52~")
 
 #define  MAGIC           46  /* To detect if flash has been initialized */
 #define  STRBUF          512 /* Buffer size for programming string */
@@ -93,6 +92,8 @@ int floorInterval = 0;
 int haptic = 0;
 bool haptic2;
 
+int ledind = 0;
+
 /* Linked list averaging mechanism */
 struct calibrLL {
   calibrLL* next;
@@ -129,7 +130,6 @@ void dumpCapabilities();
 
 /* ===== Main setup, loop, supporting functions ===== */
 Adafruit_BluefruitLE_SPI ble(BLUEFRUIT_SPI_CS, BLUEFRUIT_SPI_IRQ, BLUEFRUIT_SPI_RST);
-Adafruit_BLEBattery battery(ble);
 
 /* void hexdump() {
   int adx = sizeof(tunables) + 2;
@@ -224,6 +224,8 @@ void setupIface(byte init) {
   if (!init && !lastIf) Keyboard.end();
   if (*toBLE) {
     digitalWrite(LED2, LOW);
+    digitalWrite(BEEP, LOW);
+    ledind = 750;
     ble.echo(false);
     ble.sendCommandCheckOK("AT+BleHIDEn=On");
     ble.sendCommandCheckOK("AT+BleKeyboardEn=On");
@@ -231,27 +233,14 @@ void setupIface(byte init) {
     ble.sendCommandCheckOK("AT+GAPSTARTADV");
     ble.sendCommandCheckOK("AT+BLEKEYBOARDCODE=00-00");
     ble.reset();
-    battery.begin(true);
-    digitalWrite(BEEP, LOW);
-    delay(150);
-    digitalWrite(BEEP, HIGH);
-    delay(150);
-    digitalWrite(BEEP, LOW);
-    delay(150);
-    digitalWrite(BEEP, HIGH);
-    delay(550);
-    digitalWrite(LED2, HIGH);
   } else {
     digitalWrite(LED1, LOW);
+    digitalWrite(BEEP, LOW);
+    ledind = 750;
     Keyboard.begin();
     ble.sendCommandCheckOK("AT+GAPCONNECTABLE=0");
     ble.sendCommandCheckOK("AT+GAPDISCONNECT");
     ble.sendCommandCheckOK("AT+GAPSTOPADV");
-    digitalWrite(BEEP, LOW);
-    delay(150);
-    digitalWrite(BEEP, HIGH);
-    delay(850);
-    digitalWrite(LED1, HIGH);
   }
 }
 
@@ -875,7 +864,19 @@ void parseCmd(char* hidSequence) { /* Translate to keystrokes */
       case '@':
         loadProgram(*(++hidSequence) - 48);
         goto bail;
+
+      /* Special functions: switch interface to USB (ignored here) */
+      case '#':
+        break;
         
+      /* Special functions: switch interface to bluetooth */
+      case '$':
+        *toBLE = 1;
+        setupIface();
+        /* Resume in new routine */
+        parseBtCmd(hidSequence);
+        goto bail;
+
       case ';':
         break;
 
@@ -929,14 +930,27 @@ void parseBtCmd(char* hidSequence) { /* Translate to keystrokes */
         case '~': key = 0x29; break;
         case '_': key = 0x2a; break;
         case '!': key = 0x2b; break;
-        case '`': {
+        case '`':
           delay(250);
           continue;
-        }
-      case '@':
-        loadProgram(*(++hidSequence) - 48);
-        goto bail2;
-        break;
+        
+        case '@':
+          loadProgram(*(++hidSequence) - 48);
+          goto bail2;
+          break;
+        
+        /* Special functions: switch interface to USB */
+        case '#':
+          *toBLE = 0;
+          setupIface();
+          /* Resume in new routine */
+          parseCmd(hidSequence);
+          goto bail2;
+          
+        /* Special functions: switch interface to bluetooth (ignored here) */
+        case '$':
+          break;
+
       }
     }
     skip = 0;
@@ -1057,4 +1071,16 @@ SIGNAL(TIMER0_COMPA_vect) {
     analogWrite(HAPTIC, 255);
     haptic--;
   } else analogWrite(HAPTIC, 0);
+  if (ledind > 0) {
+    ledind--;
+    switch (ledind) {
+      case 500:
+        digitalWrite(BEEP, HIGH);
+        break;
+      case 1:
+        digitalWrite(LED1, HIGH);
+        digitalWrite(LED2, HIGH);
+        break;
+    }
+  }
 }
