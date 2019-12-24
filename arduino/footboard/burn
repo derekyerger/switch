@@ -1,5 +1,5 @@
 #!/bin/bash
 cid=$(git log --pretty=oneline |awk 'NR==1{printf "%s", substr($1,1,8)}';
 git diff-index --quiet HEAD -- && echo || echo '~')
-sed -ri 's/(#define.*GIT_HASH.*F\(").*("\))/\1'$cid'\2/' footboard.ino
+[ -z $1 ] && sed -ri 's/(#define.*GIT_HASH.*F\(").*("\))/\1'$cid'\2/' footboard.ino
 /src/arduino-1.8.5/arduino --upload --board adafruit:avr:feather32u4 --port /dev/ttyACM0 -v footboard.ino 

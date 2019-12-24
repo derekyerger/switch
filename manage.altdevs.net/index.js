@@ -506,6 +506,16 @@ function activateElt(p) {
 				$("#key").val( $("#currentPSK").val() );
 			});
 			break;
+
+		case "profiles":
+			$("#profName").on("keyup", function() {
+				if ($("#profName").val() !== "" && $("#profName").val() !== "Profile") {
+					$("#profSave").removeClass("disabled").removeAttr("disabled");
+				} else {
+					$("#profSave").addClass("disabled").attr("disabled", "disabled");
+				}
+			});
+			break;
 	}
 	
 	$('[data-toggle="tooltip"]').tooltip()
@@ -535,6 +545,21 @@ function ddSet(id, txt) {
 	switch (id) {
 		case "ddPlatform":
 			actionMap = $.extend({}, platformMap['*'], platformMap[txt]);
+			break;
+
+		case "ddProfile":
+			if (txt == "Profile") {
+				$("#profLoad").addClass("disabled").attr("disabled", "disabled");
+				$("#profDel").addClass("disabled").attr("disabled", "disabled");
+			} else if ($("#profileSel > a").length > 0) {
+				$("#profLoad").removeClass("disabled").removeAttr("disabled");
+				$("#profDel").removeClass("disabled").removeAttr("disabled");
+			}
+			if ($("#profileSel > a").length > 0) {
+				$("#ddProfile").removeClass("disabled").removeAttr("disabled");
+			} else {
+				$("#ddProfile").addClass("disabled").attr("disabled", "disabled");
+			}
 			break;
 	}
 
@@ -758,17 +783,18 @@ function profileAdd() {
 		window.alert("Please enter a unique identifier");
 		return;
 	}
-	retr("saveProfile", { name: $("#profName").val(), data: programming });
-	$("#profileSel").append('<a class="dropdown-item" href="javascript:void(0)" onclick="retr(\'getProfile\', \'' + $("#profName").val() + '\');">' + $("#profName").val() + '</a>');
+	retr("saveProfile", { name: $("#profName").val(), action: "save" });
+	if ($("#profileSel a").filter(function() { return $(this).text() === $("#profName").val();}).length === 0)
+		$("#profileSel").append('<a class="dropdown-item" href="javascript:void(0)" onclick="ddSet(\'ddProfile\', \'' + $("#profName").val() + '\');">' + $("#profName").val() + '</a>');
 	ddSet("ddProfile", $("#profName").val());
-	$("#profName").val('');
+	$("#ddProfile").removeClass("disabled").removeAttr("disabled");
 }
 
 function profileRemove() {
 	if ($("#ddProfile").html() == "Profile") return;
 	
-	retr("saveProfile", { name: $("#ddProfile").html(), data: "" });
-	$("#profileSel a:contains('" + $("#ddProfile").html() + "')").remove();
+	retr("saveProfile", { name: $("#ddProfile").html(), action: "delete" });
+	$("#profileSel a").filter(function() { return $(this).text() === $("#ddProfile").html();}).remove();;
 	ddSet("ddProfile", "Profile");
 }
 

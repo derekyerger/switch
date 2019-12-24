@@ -12,9 +12,9 @@
 
 #include "BluefruitConfig.h"
 
-#if SOFTWARE_SERIAL_AVAILABLE
-#include <SoftwareSerial.h>
-#endif
+//#if SOFTWARE_SERIAL_AVAILABLE
+//#include <SoftwareSerial.h>
+//#endif
 
 void (*resetFunc) (void) = 0;
 
@@ -124,9 +124,11 @@ void purge();
 int prompt();
 char* fetchImpulse(byte sensor, byte impulse);
 void parseCmd(char* hidSequence);
+void parseBtCmd(char* hidSequence);
 void clearS(byte sensor);
 byte avgS(byte sensor, byte dontCount = 0);
 void dumpCapabilities();
+void dumpSettings();
 
 /* ===== Main setup, loop, supporting functions ===== */
 Adafruit_BluefruitLE_SPI ble(BLUEFRUIT_SPI_CS, BLUEFRUIT_SPI_IRQ, BLUEFRUIT_SPI_RST);
@@ -207,8 +209,6 @@ void loadProgram(int idx) {
   curPgm = idx;
   int adx = sizeof(tunables) + 2;
   for (int i = -1; i < idx; i++) {
-    if (i < idx - 1) {
-    }
     int sp = 0;
     while ((pString[sp++] = EEPROM.read(adx++)) != 0);
   };
@@ -216,6 +216,18 @@ void loadProgram(int idx) {
   Serial1.print((char)(idx+48));
   Serial1.print(pString);
   Serial1.print('\n');
+}
+
+byte serGetByte() {
+  int ret = 0;
+  while (Serial1.available() < 2);
+  for (byte i = 0; i < 2; i++) {
+    ret <<= 4;
+    int bi = Serial1.read() - 48;
+    if (bi > 9) bi -= 7;
+    ret += bi;
+  }
+  return ret;
 }
 
 void setupIface(byte init) {
@@ -245,6 +257,7 @@ void setupIface(byte init) {
 }
 
 void setupLowPower() {
+  TIMSK0 ^= _BV(OCIE0A);
   saveValues();
   Serial1.print("Z\n");
   delay(500);
@@ -257,6 +270,7 @@ void setupLowPower() {
 }
 
 void teardownLowPower() {
+  TIMSK0 |= _BV(OCIE0A);
   setupIface(1);
   captureS1 = true; /* If waking up, ignore next */
   digitalWrite(RPI, HIGH);
@@ -265,6 +279,19 @@ void teardownLowPower() {
   powerSavingTime = millis();
   wifiSavingTime = millis();
   USBDevice.attach();
+}
+
+void reloadValues() {
+  int sp;
+  adx = 2;
+  for (sp = 0; sp < (sizeof(tunables) / sizeof(int)); sp++) {
+    tunables[sp] = (EEPROM.read(adx) << 8) + EEPROM.read(adx + 1);
+    adx += 2;
+  }
+
+  curPgm = 0;
+  sp = 0;
+  while ((pString[sp++] = EEPROM.read(adx++)) != 0);
 }
 
 void setup() {
@@ -301,18 +328,7 @@ void setup() {
     ble.factoryReset();
     ble.sendCommandCheckOK("AT+GAPDEVNAME=Vectis");
     ble.sendCommandCheckOK("AT+HWMODELED=DISABLE");
-  } else {
-    int sp;
-    adx += 2;
-    for (sp = 0; sp < (sizeof(tunables) / sizeof(int)); sp++) {
-      tunables[sp] = (EEPROM.read(adx) << 8) + EEPROM.read(adx + 1);
-      adx += 2;
-    }
-
-    curPgm = 0;
-    sp = 0;
-    while ((pString[sp++] = EEPROM.read(adx++)) != 0);
-  }
+  } else reloadValues();
 
   if (EEPROM.read(1006) != 121) { /* Unique ID */
     while (analogRead(0) < 100) delay(150);
@@ -514,6 +530,7 @@ skip:
         break;
 
       case 12: /* Reset */
+        Keyboard.end();
         resetFunc();
         break;
 
@@ -592,6 +609,38 @@ skip:
       case 22: /* Ping to keep awake */
         wifiSavingTime = millis();
         break;
+
+      case 23: /* Dump all settings as hex, includes all programs */
+        byte rc;
+        for (int i = 0; i < 1006; i++) {
+          rc = EEPROM.read(i);
+          if (rc < 16) Serial1.print('0');
+          Serial1.print(rc, HEX);
+        };
+        Serial1.print('\n');
+        break;
+
+      /* Timing of writing to EEPROM during Serial1.read messes us up */
+      case 24: /* Save all settings */
+        adx = Serial1.readStringUntil(',').toInt();
+        sp = Serial1.readStringUntil(',').toInt();
+        for (int i = 0; i < sp; i++)
+          EEPROM.update(adx++, serGetByte());
+        
+        Serial1.print('\n');
+        break;
+
+      case 25: /* Zero from pointer and reset */
+        adx = Serial1.readStringUntil('\n').toInt();
+        for (int i = adx; i < 1006; i++)
+          EEPROM.update(i, 0);
+        
+        Serial1.print('\n');
+        reloadValues();
+        setupIface();
+        break;
+
+
     }
   }
 
@@ -1058,6 +1107,7 @@ void dumpSettings() {
 
 // Interrupt is called once a millisecond, 
 SIGNAL(TIMER0_COMPA_vect) {
+  if (!haptic && !ledind) return;
   if (haptic < -100) {
     analogWrite(HAPTIC, 255);
     haptic++;

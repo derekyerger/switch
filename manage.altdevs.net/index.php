@@ -93,13 +93,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
 		case "getProfile":
 			$p = preg_replace("/'/", "\\'", json_decode(file_get_contents("profiles"), true)[$n = $_POST['d']]);
-			$comm->txrxCmd(3, "$p\n");
-			print "programming = '$p'; ddSet('ddProfile', '$n');";
+			/* Reconstruct as blocks of 16 */
+			$ptr = 0;
+			while (strlen($p) >= 32) {
+				$ss = substr($p, 0, 32);
+				$p = substr($p, 32);
+				$comm->txrxCmd(24, "$ptr,16,$ss\n");
+				error_log("$ptr,16,$ss\n");
+				$ptr += 16;
+				usleep(100000);
+			}
+			if (strlen($p) > 0) {
+				$comm->txrxCmd(24, "$ptr," . strlen($p)/2 . ",$p\n");
+				usleep(100000);
+				error_log("$ptr," . strlen($p)/2 . ",$p\n");
+				$ptr += strlen($p)/2;
+			}
+			$comm->txrxCmd(25, "$ptr\n");
+			print "$('#profName').val('$n');";
 			break;
 
 		case "saveProfile":
 			$p = json_decode(file_get_contents("profiles"), true);
-			if ($_POST['d']['data']) $p[$_POST['d']['name']] = $_POST['d']['data'];
+			if ($_POST['d']['action'] == "save") $p[$_POST['d']['name']] = preg_replace("/0*$/", "", $comm->txrxCmd(23, null, 1000));
 			else unset($p[$_POST['d']['name']]);
 			file_put_contents("profiles", json_encode($p));
 			break;
