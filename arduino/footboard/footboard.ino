@@ -19,7 +19,7 @@
 void (*resetFunc) (void) = 0;
 
 #define  DEV_MODEL       F("vectis")
-#define  GIT_HASH        F("bd7f2a52~")
+#define  GIT_HASH        F("672ceed5~")
 
 #define  MAGIC           46  /* To detect if flash has been initialized */
 #define  STRBUF          512 /* Buffer size for programming string */
@@ -637,6 +637,7 @@ skip:
         
         Serial1.print('\n');
         reloadValues();
+        loadProgram(0);
         setupIface();
         break;
 
@@ -847,6 +848,7 @@ void updateCalibration(int curVal = 0, bool verbose = 1) {
 char* fetchImpulse(byte sensorMask, byte impulse) { /* Get substring */
   byte mo = 0;
   char* cc = pString;
+  if (*cc == 0) return nOp;
   do {
     switch (mo) {
       case 0:
@@ -1107,7 +1109,6 @@ void dumpSettings() {
 
 // Interrupt is called once a millisecond, 
 SIGNAL(TIMER0_COMPA_vect) {
-  if (!haptic && !ledind) return;
   if (haptic < -100) {
     analogWrite(HAPTIC, 255);
     haptic++;
