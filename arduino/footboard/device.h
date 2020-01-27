@@ -26,7 +26,7 @@ const char TDNAME14[] PROGMEM = "SPU Sleep delay";
 const char TDNAME15[] PROGMEM = "CM Sleep delay";
 const char TDNAME16[] PROGMEM = "Baseline ratio";
 const char TDNAME17[] PROGMEM = "Load ratio";
-const char TDNAME18[] PROGMEM = "Load point";
+const char TDNAME18[] PROGMEM = "Haptic enable";
 
 const char TDVAR0[] PROGMEM = "sensorCount";
 const char TDVAR1[] PROGMEM = "hardPress";
@@ -46,7 +46,7 @@ const char TDVAR14[] PROGMEM = "sleepDelay";
 const char TDVAR15[] PROGMEM = "wifiSleepDelay";
 const char TDVAR16[] PROGMEM = "ratio[0]";
 const char TDVAR17[] PROGMEM = "ratio[1]";
-const char TDVAR18[] PROGMEM = "loadPressure";
+const char TDVAR18[] PROGMEM = "haptic";
 
 const char TDDESC0[] PROGMEM = "Number of sensors";
 const char TDDESC1[] PROGMEM = "Hard pressure";
@@ -66,7 +66,7 @@ const char TDDESC14[] PROGMEM = "Seconds of inactivity before processor sleep";
 const char TDDESC15[] PROGMEM = "Seconds of inactivity before web server sleep";
 const char TDDESC16[] PROGMEM = "Sensor 1 vs 2 at baseline";
 const char TDDESC17[] PROGMEM = "Sensor 1 vs 2 under load";
-const char TDDESC18[] PROGMEM = "Load threshold";
+const char TDDESC18[] PROGMEM = "Haptic enable";
 
 const TINFO TDESC[TCMAX] PROGMEM = {
 	{ TDNAME0, TDVAR0, 1, 2, TDDESC0 },

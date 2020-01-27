@@ -1,22 +1,33 @@
 #!/bin/ash
 
+timeout=20
+
 sleep 1; wifi
+date >> /root/wifilog
 
 [ $1 == "cli" ] && {
 	sleep 1
 	failures=0
 	while ! iw dev |grep -q ssid; do
 		failures=$((failures + 1))
-		[ $failures -ge 15 ] && break
+		echo "stage 1 failures=$failures" >> /root/wifilog
+		[ $failures -ge $timeout ] && break
 		sleep 1
 	done
 	while [ -z "$ip" ]; do
 		failures=$((failures + 1))
-		[ $failures -ge 15 ] && break
+		echo "stage 2 failures=$failures" >> /root/wifilog
+		[ $failures -ge $timeout ] && break
 		sleep 1
 		ip=$(ifconfig wlan0 |grep 'inet addr'|cut -d: -f2 |cut -d' ' -f1)
+		echo "stage 2 ip=$ip" >> /root/wifilog
 	done
-	[ $failures -ge 15 ] || {
+	while ! ping -c 1 -w 1 8.8.8.8 &>/dev/null; do
+		failures=$((failures + 1))
+		echo "stage 3 failures=$failures" >> /root/wifilog
+		[ $failures -ge $timeout ] && break
+	done
+	[ $failures -ge $timeout ] || {
 		curl 'https://api.altdevs.net/update.php' --data "nonce=$2&ip=$ip"
 		mv /root/log /root/log.pending
 		curl -F 'data=@/root/log.pending' https://api.altdevs.net/log.php

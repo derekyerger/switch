@@ -138,7 +138,8 @@ class SerialDevice implements Device {
 			$db[$device]['file'] = $this->rxFile = $tmp = tempnam('/tmp', 'rx.');
 			$db[$device]['port'] = $port = count($db) + 7000;
 			$db[$device]['pid'] = trim(shell_exec(
-				"$stdbuf cat $device | /usr/bin/tee-ts.sh /root/log |tee $tmp | $stdbuf $php ws/ttyws.php $port >/dev/null 2>&1 & echo $!"
+				"stty -F $device icanon 2>&1 >/dev/null;" .
+				"$stdbuf cat $device | " . (file_exists('/usr/bin/tee-ts.sh') ? "/usr/bin/tee-ts.sh /root/log |" : "") . "tee $tmp | $stdbuf $php ws/ttyws.php $port >/dev/null 2>&1 & echo $!"
 			)) - 2;
 			file_put_contents('/tmp/devdb', json_encode($db), LOCK_EX); /* flock the bits */
 		}

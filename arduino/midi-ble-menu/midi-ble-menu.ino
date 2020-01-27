@@ -21,7 +21,7 @@ float adj[2] = {0x64 / 380, 0x64 / 350};
 int last[2];
 int val;
 
-const int MAGIC = 9; /* To detect if flash has been initialized */
+const int MAGIC = 10; /* To detect if flash has been initialized */
 const int MENUFIXED = 2; /* Where to start counting tunable entries */
 
 #define FACTORYRESET_ENABLE         1
@@ -126,6 +126,10 @@ void saveValues() { /* Write all tunables to EEPROM */
 
 void setup() {
   programming = -99;
+  pinMode(10, OUTPUT);
+  digitalWrite(10, LOW);
+  pinMode(22, OUTPUT);
+  digitalWrite(22, LOW);
   Serial.begin(115200);
   Serial.setTimeout(60000);
   ble.begin(0);

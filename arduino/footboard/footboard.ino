@@ -19,7 +19,7 @@
 void (*resetFunc) (void) = 0;
 
 #define  DEV_MODEL       F("vectis")
-#define  GIT_HASH        F("672ceed5~")
+#define  GIT_HASH        F("07a6b348~")
 
 #define  MAGIC           46  /* To detect if flash has been initialized */
 #define  STRBUF          512 /* Buffer size for programming string */
@@ -28,7 +28,6 @@ void (*resetFunc) (void) = 0;
 #define  MONITORINTERVAL 100 /* During sensor monitoring */
 #define  BATTPOWER        3  /* Change in A9 considered battery switch */
 
-#define  LED1   5
 #define  LED2   6
 #define  HAPTIC 10
 #define  BEEP   12
@@ -58,7 +57,9 @@ int *toBLE = &tunables[13];
 int *sleepDelay = &tunables[14];
 int *wifiSleepDelay = &tunables[15];
 int *ratio[2] = { &tunables[16], &tunables[17] };
-int *loadPressure = &tunables[18];
+int *hapticEn = &tunables[18];
+
+#define loadPressure 50
 
 byte debugging = 0;
 char db[20];
@@ -70,7 +71,7 @@ int val;
 byte lastIf;
 // int batlvl;
 
-int lastBattery;
+float lastBattery;
 float curBattery;
 unsigned long batRate;
 #define BATWINDOW 3
@@ -237,6 +238,12 @@ byte serGetByte() {
   return ret;
 }
 
+void bleDisconnect() {
+  ble.sendCommandCheckOK("AT+GAPCONNECTABLE=0");
+  ble.sendCommandCheckOK("AT+GAPDISCONNECT");
+  ble.sendCommandCheckOK("AT+GAPSTOPADV");
+}
+
 void setupIface(byte init) {
   if (!init && lastIf == *toBLE) return;
   lastIf = *toBLE;
@@ -253,13 +260,10 @@ void setupIface(byte init) {
     ble.sendCommandCheckOK("AT+BLEKEYBOARDCODE=00-00");
     ble.reset();
   } else {
-    digitalWrite(LED1, LOW);
     digitalWrite(BEEP, LOW);
     ledind = 750;
     Keyboard.begin();
-    ble.sendCommandCheckOK("AT+GAPCONNECTABLE=0");
-    ble.sendCommandCheckOK("AT+GAPDISCONNECT");
-    ble.sendCommandCheckOK("AT+GAPSTOPADV");
+    bleDisconnect();
   }
 }
 
@@ -269,9 +273,7 @@ void setupLowPower() {
   Serial1.print("Z\n");
   delay(500);
   if (!lastIf) Keyboard.end();
-  ble.sendCommandCheckOK("AT+GAPCONNECTABLE=0");
-  ble.sendCommandCheckOK("AT+GAPDISCONNECT");
-  ble.sendCommandCheckOK("AT+GAPSTOPADV");
+  bleDisconnect();
   digitalWrite(RPI, LOW);
   USBCON = 0;
 }
@@ -302,14 +304,14 @@ void reloadValues() {
 }
 
 void setup() {
-  pinMode(LED1, OUTPUT);
   pinMode(LED2, OUTPUT);
   pinMode(HAPTIC, OUTPUT);
   pinMode(BEEP, OUTPUT);
   pinMode(RPI, OUTPUT);
-  digitalWrite(LED1, HIGH);
   digitalWrite(LED2, HIGH);
   digitalWrite(BEEP, HIGH);
+  digitalWrite(RPI, LOW);
+  delay(500);
   digitalWrite(RPI, HIGH);
   analogWrite(HAPTIC, 0);
 
@@ -576,7 +578,7 @@ skip:
         float nf;
         *ratio[0] = avgS(0, 255) - avgS(1, 255);
         
-        while ((analogRead(0) >> 2) < *loadPressure) delay(10);
+        while ((analogRead(0) >> 2) < loadPressure) delay(10);
         delay(1000);
         for (sp = 0; sp < SAMP; sp++) {
           for (byte s = 0; s < *numSensors; s++) impulseBuffer[s][sp] = analogRead(s) >> 2;
@@ -599,7 +601,7 @@ skip:
         break;
 
       case 21: /* Reset ID */
-        while (analogRead(0) < 100) delay(150);
+/*        while (analogRead(0) < 100) delay(150);
         delay(500);
         randomSeed(analogRead(0) + analogRead(1));
         EEPROM.update(1006, 121);
@@ -609,7 +611,7 @@ skip:
           else if (c > 25) c += 39;
           else c += 97;
           EEPROM.update(adx, c);
-        }
+        }*/
         break;
 
       case 22: /* Ping to keep awake */
@@ -1116,16 +1118,16 @@ void dumpSettings() {
 // Interrupt is called once a millisecond, 
 SIGNAL(TIMER0_COMPA_vect) {
   if (haptic < -100) {
-    analogWrite(HAPTIC, 255);
+    analogWrite(HAPTIC, *hapticEn);
     haptic++;
   } else if (haptic < -50) {
     analogWrite(HAPTIC, 0);
     haptic++;
   } else if (haptic < 0) {
-    analogWrite(HAPTIC, 255);
+    analogWrite(HAPTIC, *hapticEn);
     haptic++;
   } else if (haptic) {
-    analogWrite(HAPTIC, 255);
+    analogWrite(HAPTIC, *hapticEn);
     haptic--;
   } else analogWrite(HAPTIC, 0);
   if (ledind > 0) {
@@ -1135,7 +1137,6 @@ SIGNAL(TIMER0_COMPA_vect) {
         digitalWrite(BEEP, HIGH);
         break;
       case 1:
-        digitalWrite(LED1, HIGH);
         digitalWrite(LED2, HIGH);
         break;
     }
