@@ -4,7 +4,6 @@
 #include "Adafruit_BluefruitLE_SPI.h"
 #include "Adafruit_BluefruitLE_UART.h"
 #include "Adafruit_BLEMIDI.h"
-#include <EEPROM.h>
 #include "MIDIUSB.h"
 
 #if SOFTWARE_SERIAL_AVAILABLE
@@ -41,7 +40,7 @@ const char *tunablesDesc[] = { "Operating mode",
                                "Delay between samples (ms)",
                                "Scale range",
                                "Start note"};
-int tunables[] = { 1, 0, 100, 100, 20, 99, 2, 8, 60 };
+int tunables[] = { 1, 0, 100, 100, 20, 90, 2, 8, 60 };
 
 /* Array mapped to legible pointer names */
 int *mode = &tunables[0];
@@ -60,6 +59,7 @@ byte note = 0;
 byte noteVal[2], lastVal[2];
 int maxAct = 0;
 bool toggle = 0;
+int sp;
 
 int lastV[2];
 int base[2];
@@ -119,12 +119,6 @@ void controlChange(byte channel, byte control, byte value) {
 }
 
 void saveValues() { /* Write all tunables to EEPROM */
-  int adx = 2;
-  int sp;
-  for (sp = 0; sp < (sizeof(tunables)/sizeof(int)); sp++) {
-    EEPROM.update(adx, tunables[sp] >> 8);
-    EEPROM.update(adx+1, tunables[sp]); adx += 2;
-  }
   for (sp = 0; sp < 2; sp++)
     adj[sp] = (float) CEIL / (float) (ceiling[sp] - base[sp]);
 }
@@ -139,27 +133,10 @@ void setup() {
   Serial.setTimeout(60000);
   ble.begin(0);
   adx = 0;
-  val = (EEPROM.read(adx) << 8) + EEPROM.read(adx+1);
-  if (val != MAGIC) {
-    Serial.println("First run on this chip. Values will be initialized.");
-    EEPROM.update(adx, MAGIC >> 8); EEPROM.update(adx+1, MAGIC);
-    saveValues();
-    ble.factoryReset();
-    ble.sendCommandCheckOK("AT+GAPDEVNAME=Vectis-MIDI");
-    ble.sendCommandCheckOK("AT+HWMODELED=DISABLE");
-  } else {
-    int sp;
-    adx += 2;
-    for (sp = 0; sp < (sizeof(tunables)/sizeof(int)); sp++) {
-      tunables[sp] = (EEPROM.read(adx) << 8) + EEPROM.read(adx+1);
-      adx += 2;
-    }
-    for (sp = 0; sp < 2; sp++)
-      adj[sp] = (float) CEIL / (float) (ceiling[sp] - base[sp]);
-
-    Serial.println("Stored values have been loaded.");
-    Serial.println(sp);
-  }
+  saveValues();
+  ble.factoryReset();
+  ble.sendCommandCheckOK("AT+GAPDEVNAME=Vectis-MIDI");
+  ble.sendCommandCheckOK("AT+HWMODELED=DISABLE");
   ble.echo(false);
   //ble.sendCommandCheckOK("AT+GAPCONNECTABLE=1");
   //ble.sendCommandCheckOK("AT+GAPSTARTADV");

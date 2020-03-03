@@ -28,12 +28,10 @@ const int MENUFIXED = 2; /* Where to start counting tunable entries */
 
 #define CEIL 0x64 /* noteVal and lastVal are translated to a scale of 0 to this value */
 
-#define DIVIDE 2
-#define BASETIME 3000
-#define BASEWIN 0
-
 const char *tunablesDesc[] = { "Operating mode",
                                "Channel",
+                               "Floor for sensor 0",
+                               "Floor for sensor 1",
                                "Ceiling for sensor 0",
                                "Ceiling for sensor 1",
                                "Minimum activation",
@@ -41,17 +39,18 @@ const char *tunablesDesc[] = { "Operating mode",
                                "Delay between samples (ms)",
                                "Scale range",
                                "Start note"};
-int tunables[] = { 1, 0, 100, 100, 20, 99, 2, 8, 60 };
+int tunables[] = { 1, 0, 240, 40, 420, 300, 50, 20, 10, 8, 60 };
 
 /* Array mapped to legible pointer names */
 int *mode = &tunables[0];
 int *chan = &tunables[1];
-int *ceiling = &tunables[2];
-int *minAct = &tunables[4];
-int *minAct2 = &tunables[5];
-int *sampdelay = &tunables[6];
-int *scale = &tunables[7];
-int *startnote = &tunables[8];
+int *base = &tunables[2];
+int *ceiling = &tunables[4];
+int *minAct = &tunables[6];
+int *minAct2 = &tunables[7];
+int *sampdelay = &tunables[8];
+int *scale = &tunables[9];
+int *startnote = &tunables[10];
 
 int adx = 0;
 int programming;
@@ -60,10 +59,6 @@ byte note = 0;
 byte noteVal[2], lastVal[2];
 int maxAct = 0;
 bool toggle = 0;
-
-int lastV[2];
-int base[2];
-unsigned long timeV;
 
 /* Function prototypes */
 void printMenu();
@@ -166,8 +161,6 @@ void setup() {
   //delay(1000);
   midi.begin(true);
   ble.setMode(BLUEFRUIT_MODE_DATA);
-  base[0] = analogRead(0) >> DIVIDE + BASEWIN;
-  base[1] = analogRead(1) >> DIVIDE + BASEWIN;
 }
 
 void loop() {
@@ -180,23 +173,7 @@ void loop() {
   }
   bool curNote = 0;
   for (int i = 0; i < 2; i++) {
-    int w = analogRead(i) >> DIVIDE;
-
-    if (w != lastV[i]) {
-      timeV = millis();
-      lastV[i] = w;
-    } else if (millis() - timeV > BASETIME) {
-      if (lastV[0] != base[0] - BASEWIN || lastV[1] != base[1] - BASEWIN) {
-        base[0] = lastV[0] + BASEWIN;
-        base[1] = lastV[1] + BASEWIN;
-        timeV = millis();
-        Serial.print("Base: ");
-        Serial.print(base[0]);
-        Serial.print(' ');
-        Serial.println(base[1]);
-      }
-    }
-
+    int w = analogRead(i);
     int a = w - base[i];
     if (a < 0) a = 0;
     
@@ -212,8 +189,7 @@ void loop() {
       last[i] = a;
       float f = (float) a;
       f *= adj[i];
-      // f = pow(f, 1.5);
-      // if (f > (float) CEIL) f = (float) CEIL;
+      if (f > (float) CEIL) f = (float) CEIL;
   
       noteVal[i] = (byte) f;
       if (programming == -1) Serial.println(noteVal[i]);
@@ -221,9 +197,7 @@ void loop() {
     detectUSB();
     if (*mode < 2) {
       if (noteVal[0] > *minAct || noteVal[1] > *minAct) {
-        float diff2 = (float) noteVal[1] / (float) (noteVal[0] + noteVal[1]);
-
-        int diff = (int) (diff2 * (*scale == 8 ? 12 : *scale));
+        int diff = (int) ((float) noteVal[1] / (float) (noteVal[0] + noteVal[1]) * (*scale == 8 ? 12 : *scale));
         if (*scale == 8) {
           if (diff % 12 == 1) diff--;
           if (diff % 12 == 3) diff--;

@@ -19,10 +19,10 @@
 void (*resetFunc) (void) = 0;
 
 #define  DEV_MODEL       F("vectis")
-#define  GIT_HASH        F("07a6b348~")
+#define  GIT_HASH        F("26e493e9~")
 
 #define  MAGIC           46  /* To detect if flash has been initialized */
-#define  STRBUF          512 /* Buffer size for programming string */
+#define  STRBUF          386 /* Buffer size for programming string */
 #define  SAMP            50  /* For array allocation */
 #define  MAXSENS         2   /* For uarray allocation */
 #define  MONITORINTERVAL 100 /* During sensor monitoring */
@@ -88,7 +88,7 @@ unsigned long monitorTimeout = 0;
 int adx = 0;
 int curPgm = 0;
 boolean debug;
-byte monitor;
+byte monitor = 0;
 unsigned long monitorTime;
 byte impulse;
 byte sensorMask;
@@ -310,8 +310,8 @@ void setup() {
   pinMode(RPI, OUTPUT);
   digitalWrite(LED2, HIGH);
   digitalWrite(BEEP, HIGH);
-  digitalWrite(RPI, LOW);
-  delay(500);
+  //digitalWrite(RPI, LOW);
+  //delay(500);
   digitalWrite(RPI, HIGH);
   analogWrite(HAPTIC, 0);
 

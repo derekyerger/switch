@@ -19,10 +19,10 @@ while true; do
 	updi=$((updi + 1))
 	[ $updi -ge 3600 ] && {
 		updi=0
-		[ -s /root/log ] && ping -c 1 api.altdevs.net &>/dev/null && {
-			mv /root/log /root/log.pending
-			curl -F 'data=@/root/log.pending' https://api.altdevs.net/log.php
-			rm /root/log.pending
+		[ -s /tmp/log ] && ping -c 1 api.altdevs.net &>/dev/null && {
+			mv /tmp/log /tmp/log.pending
+			curl -F 'data=@/tmp/log.pending' https://api.altdevs.net/log.php
+			rm /tmp/log.pending
 			echo -ne '\x11' > /dev/ttyS0 # Tack unit ID to top
 		}
 	}
