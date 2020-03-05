@@ -27,7 +27,7 @@ const int MENUFIXED = 2; /* Where to start counting tunable entries */
 
 #define CEIL 0x64 /* noteVal and lastVal are translated to a scale of 0 to this value */
 
-#define DIVIDE 2
+#define DIVIDE 4
 #define BASETIME 3000
 #define BASEWIN 0
 
@@ -40,7 +40,7 @@ const char *tunablesDesc[] = { "Operating mode",
                                "Delay between samples (ms)",
                                "Scale range",
                                "Start note"};
-int tunables[] = { 1, 0, 100, 100, 20, 90, 2, 8, 60 };
+int tunables[] = { 1, 0, 30, 30, 8, 90, 2, 8, 60 };
 
 /* Array mapped to legible pointer names */
 int *mode = &tunables[0];
@@ -134,10 +134,10 @@ void setup() {
   ble.begin(0);
   adx = 0;
   saveValues();
-  ble.factoryReset();
-  ble.sendCommandCheckOK("AT+GAPDEVNAME=Vectis-MIDI");
-  ble.sendCommandCheckOK("AT+HWMODELED=DISABLE");
   ble.echo(false);
+  /*ble.factoryReset();
+  ble.sendCommandCheckOK("AT+GAPDEVNAME=Vectis-MIDI");
+  ble.sendCommandCheckOK("AT+HWMODELED=DISABLE");*/
   //ble.sendCommandCheckOK("AT+GAPCONNECTABLE=1");
   //ble.sendCommandCheckOK("AT+GAPSTARTADV");
   //delay(1000);
