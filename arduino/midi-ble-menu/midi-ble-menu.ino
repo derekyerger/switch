@@ -4,7 +4,9 @@
 #include "Adafruit_BluefruitLE_SPI.h"
 #include "Adafruit_BluefruitLE_UART.h"
 #include "Adafruit_BLEMIDI.h"
-#include <EEPROM.h>
+#ifndef SAMD_SERIES
+  #include <EEPROM.h>
+#endif
 #include "MIDIUSB.h"
 
 #if SOFTWARE_SERIAL_AVAILABLE
@@ -17,41 +19,39 @@ Adafruit_BluefruitLE_SPI ble(BLUEFRUIT_SPI_CS, BLUEFRUIT_SPI_IRQ, BLUEFRUIT_SPI_
 
 Adafruit_BLEMIDI midi(ble);
 
-float adj[2] = {0x64 / 380, 0x64 / 350};
+float adj[2] = {0x64 / 380, 0x64 / 380};
 int last[2];
 int val;
 
-const int MAGIC = 10; /* To detect if flash has been initialized */
+const int MAGIC = 17; /* To detect if flash has been initialized */
 const int MENUFIXED = 2; /* Where to start counting tunable entries */
 
 #define FACTORYRESET_ENABLE         1
 
 #define CEIL 0x64 /* noteVal and lastVal are translated to a scale of 0 to this value */
 
-#define DIVIDE 2
+#define DIVIDE 4
 #define BASETIME 3000
 #define BASEWIN 0
+#define N_CEIL 30
 
 const char *tunablesDesc[] = { "Operating mode",
                                "Channel",
-                               "Ceiling for sensor 0",
-                               "Ceiling for sensor 1",
                                "Minimum activation",
                                "Minimum activation 2",
                                "Delay between samples (ms)",
                                "Scale range",
                                "Start note"};
-int tunables[] = { 1, 0, 100, 100, 20, 99, 2, 8, 60 };
+int tunables[] = { 1, 0, 8, 99, 2, 8, 60 };
 
 /* Array mapped to legible pointer names */
 int *mode = &tunables[0];
 int *chan = &tunables[1];
-int *ceiling = &tunables[2];
-int *minAct = &tunables[4];
-int *minAct2 = &tunables[5];
-int *sampdelay = &tunables[6];
-int *scale = &tunables[7];
-int *startnote = &tunables[8];
+int *minAct = &tunables[2];
+int *minAct2 = &tunables[3];
+int *sampdelay = &tunables[4];
+int *scale = &tunables[5];
+int *startnote = &tunables[6];
 
 int adx = 0;
 int programming;
@@ -119,14 +119,16 @@ void controlChange(byte channel, byte control, byte value) {
 }
 
 void saveValues() { /* Write all tunables to EEPROM */
-  int adx = 2;
   int sp;
+#ifndef SAMD_SERIES
+  int adx = 2;
   for (sp = 0; sp < (sizeof(tunables)/sizeof(int)); sp++) {
     EEPROM.update(adx, tunables[sp] >> 8);
     EEPROM.update(adx+1, tunables[sp]); adx += 2;
   }
+#endif
   for (sp = 0; sp < 2; sp++)
-    adj[sp] = (float) CEIL / (float) (ceiling[sp] - base[sp]);
+    adj[sp] = (float) CEIL / (float) (N_CEIL - base[sp]);
 }
 
 void setup() {
@@ -138,6 +140,8 @@ void setup() {
   Serial.begin(115200);
   Serial.setTimeout(60000);
   ble.begin(0);
+  ble.echo(false);
+#ifndef SAMD_SERIES
   adx = 0;
   val = (EEPROM.read(adx) << 8) + EEPROM.read(adx+1);
   if (val != MAGIC) {
@@ -145,7 +149,7 @@ void setup() {
     EEPROM.update(adx, MAGIC >> 8); EEPROM.update(adx+1, MAGIC);
     saveValues();
     ble.factoryReset();
-    ble.sendCommandCheckOK("AT+GAPDEVNAME=Vectis-MIDI");
+    ble.sendCommandCheckOK("AT+GAPDEVNAME=Vectis-MIDI 2");
     ble.sendCommandCheckOK("AT+HWMODELED=DISABLE");
   } else {
     int sp;
@@ -155,14 +159,19 @@ void setup() {
       adx += 2;
     }
     for (sp = 0; sp < 2; sp++)
-      adj[sp] = (float) CEIL / (float) (ceiling[sp] - base[sp]);
+      adj[sp] = (float) CEIL / (float) (N_CEIL - base[sp]);
 
     Serial.println("Stored values have been loaded.");
     Serial.println(sp);
   }
-  ble.echo(false);
-  //ble.sendCommandCheckOK("AT+GAPCONNECTABLE=1");
-  //ble.sendCommandCheckOK("AT+GAPSTARTADV");
+#else
+  //ble.factoryReset();
+  //ble.sendCommandCheckOK("AT+GAPDEVNAME=Vectis-MIDI 5");
+  //ble.sendCommandCheckOK("AT+HWMODELED=DISABLE");
+  saveValues();
+#endif
+  ble.sendCommandCheckOK("AT+GAPCONNECTABLE=1");
+  ble.sendCommandCheckOK("AT+GAPSTARTADV");
   //delay(1000);
   midi.begin(true);
   ble.setMode(BLUEFRUIT_MODE_DATA);

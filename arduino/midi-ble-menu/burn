@@ -1,3 +1,9 @@
 #!/bin/bash
-[ -e /src/arduino-1.8.5/arduino ] && /src/arduino-1.8.5/arduino --upload --board adafruit:avr:feather32u4 --port /dev/ttyACM0 -v midi-ble-menu.ino 
-[ -e ~/arduino-1.8.9/arduino ] && ~/arduino-1.8.9/arduino --upload --board adafruit:avr:feather32u4 --port /dev/ttyACM0 -v midi-ble-menu.ino 
+lsusb |grep -q 239a:000b && {
+	plat="adafruit:samd:adafruit_feather_m0"
+} || {
+	plat="adafruit:avr:feather32u4"
+}
+echo Using platform $plat
+[ -e /src/arduino-1.8.5/arduino ] && /src/arduino-1.8.5/arduino --upload --board $plat --port /dev/ttyACM0 -v midi-ble-menu.ino 
+[ -e ~/arduino-1.8.9/arduino ] && ~/arduino-1.8.9/arduino --upload --board $plat --port /dev/ttyACM0 -v midi-ble-menu.ino 
