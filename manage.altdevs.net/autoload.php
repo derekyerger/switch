@@ -4,13 +4,12 @@ require_once("comms/comms.php");
 
 if (file_exists('/www/hciconf')) {
 	/* RPi or other OpenWRT-backed device */
-	if (file_exists('/root/outrigger')) require_once("devices/aid2.php");
-	else require_once("devices/aid1.php");
+	require_once("devices/aid3.php");
 	$comm = new comms\SerialDevice("/dev/ttyS0");
 	define('DEV_TIMEOUT', 1000);
 } elseif (file_exists('/dev/ttyUSB0') || file_exists('/dev/ttyACM0')) {
 	/* Local direct-attached */
-	require_once("devices/aid1.php"); /* Assumed */
+	require_once("devices/aid3.php"); /* Assumed */
 	$comm = new comms\SerialDevice(
 		file_exists('/dev/ttyUSB0') ? '/dev/ttyUSB0' : '/dev/ttyACM0');
 	define('DEV_TIMEOUT', 1000);

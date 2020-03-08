@@ -35,6 +35,8 @@ define Package/hciconf/install
 	$(INSTALL_BIN) ./files/delaywifi $(1)/usr/bin/
 	$(INSTALL_DATA) ./files/wifis.awk $(1)/usr/bin/
 	$(INSTALL_BIN) ./files/tee-ts.sh $(1)/usr/bin
+	$(INSTALL_DIR) $(1)/lib/preinit
+	$(INSTALL_BIN) ./files/lib/preinit/79_fsck $(1)/lib/preinit
 endef
 
 $(eval $(call BuildPackage,hciconf))

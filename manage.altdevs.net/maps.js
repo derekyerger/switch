@@ -1,11 +1,12 @@
 /* Copyright (c) 2018 by Derek Yerger. All Rights Reserved. */
 
-var locMapImg = { 10: '<img class="tico" src="bar.svg"><img class="tico" src="bar.svg"><img class="tico" src="i0.svg">',
-	11: '<img class="tico" src="bar.svg"><img class="tico" src="bar.svg"><img class="tico" src="i1.svg">',
-	12: '<img class="tico" src="bar.svg"><img class="tico" src="bar.svg"><img class="tico" src="i2.svg">',
-	20: '<img class="tico" src="i0.svg"><img class="tico" src="bar.svg"><img class="tico" src="bar.svg">',
-	21: '<img class="tico" src="i1.svg"><img class="tico" src="bar.svg"><img class="tico" src="bar.svg">',
-	22: '<img class="tico" src="i2.svg"><img class="tico" src="bar.svg"><img class="tico" src="bar.svg">',
+var locMapImg = {
+	10: '<img class="tico" src="i0.svg"><img class="tico" src="bar.svg"><img class="tico" src="bar.svg">',
+	11: '<img class="tico" src="i1.svg"><img class="tico" src="bar.svg"><img class="tico" src="bar.svg">',
+	12: '<img class="tico" src="i2.svg"><img class="tico" src="bar.svg"><img class="tico" src="bar.svg">',
+	20: '<img class="tico" src="bar.svg"><img class="tico" src="bar.svg"><img class="tico" src="i0.svg">',
+	21: '<img class="tico" src="bar.svg"><img class="tico" src="bar.svg"><img class="tico" src="i1.svg">',
+	22: '<img class="tico" src="bar.svg"><img class="tico" src="bar.svg"><img class="tico" src="i2.svg">',
 	30: '<img class="tico" src="bar.svg"><img class="tico" src="i0.svg"><img class="tico" src="bar.svg">',
 	31: '<img class="tico" src="bar.svg"><img class="tico" src="i1.svg"><img class="tico" src="bar.svg">',
 	32: '<img class="tico" src="bar.svg"><img class="tico" src="i2.svg"><img class="tico" src="bar.svg">',
@@ -81,7 +82,8 @@ var platformMap = {
 			"Up Arrow": "Z",
 			"Down Arrow": "Y",
 			"Enter": "|",
-			"Tab": "!",
+			"Next item": "!",
+			"Previous item": "+!",
 			"Home": "R",
 			"End": "U",
 			"Page Up": "S",
@@ -146,6 +148,13 @@ var platformMap = {
 			"Edit menu": "^Ce",
 			"View menu": "^Cv",
 		},
+		"Document Editing": {
+			"Bold": "&b",
+			"Italic": "&i",
+			"Underline": "&u",
+			"Previous paragraph": "^Z",
+			"Next paragraph": "^Y",
+		},
 	},
 	"Android": {
 		"Clipboard and Undo": winClip,
@@ -161,6 +170,13 @@ var platformMap = {
 			"Edit menu": "%e",
 			"View menu": "%v",
 		},
+		"Document Editing": {
+			"Bold": "^b",
+			"Italic": "^i",
+			"Underline": "^u",
+			"Previous paragraph": "^Z",
+			"Next paragraph": "^Y",
+		},
 	},
 	"Linux KDE": {
 		"Clipboard and Undo": winClip,
@@ -172,6 +188,13 @@ var platformMap = {
 			"File menu": "%f",
 			"Edit menu": "%e",
 			"View menu": "%v",
+		},
+		"Document Editing": {
+			"Bold": "^b",
+			"Italic": "^i",
+			"Underline": "^u",
+			"Previous paragraph": "^Z",
+			"Next paragraph": "^Y",
 		},
 	},
 	"Microsoft Windows": {
@@ -195,6 +218,13 @@ var platformMap = {
 		"Launch Program": {
 			"Start Firefox": "&r``firefox|",
 			"Start Notepad": "&r``notepad|",
+		},
+		"Document Editing": {
+			"Bold": "^b",
+			"Italic": "^i",
+			"Underline": "^u",
+			"Previous paragraph": "^Z",
+			"Next paragraph": "^Y",
 		},
 	},
 };

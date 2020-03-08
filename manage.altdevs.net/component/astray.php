@@ -16,7 +16,7 @@ JS::append("$.extend($.gritter.options, { fade_in_speed: 0 }); if (ws) ws.onmess
 	console.log(msg.data);
 	t = $('iframe')[0].contentWindow.onMoveKey;
 	switch (msg.data) {
-		case '>20;':
+		case '>10;':
 			t([-15, 0]);
 			$('.gritter-item-wrapper').remove();
 			$.gritter.add({
@@ -27,7 +27,7 @@ JS::append("$.extend($.gritter.options, { fade_in_speed: 0 }); if (ws) ws.onmess
 				time: ''
 			});
 			break;
-		case '>10;':
+		case '>20;':
 			t([15, 0]);
 			$('.gritter-item-wrapper').remove();
 			$.gritter.add({
@@ -38,7 +38,7 @@ JS::append("$.extend($.gritter.options, { fade_in_speed: 0 }); if (ws) ws.onmess
 				time: ''
 			});
 			break;
-		case '>21;':
+		case '>11;':
 			t([0, -15]);
 			$('.gritter-item-wrapper').remove();
 			$.gritter.add({
@@ -49,7 +49,7 @@ JS::append("$.extend($.gritter.options, { fade_in_speed: 0 }); if (ws) ws.onmess
 				time: ''
 			});
 			break;
-		case '>11;':
+		case '>21;':
 			t([0, 15]);
 			$('.gritter-item-wrapper').remove();
 			$.gritter.add({
@@ -60,7 +60,7 @@ JS::append("$.extend($.gritter.options, { fade_in_speed: 0 }); if (ws) ws.onmess
 				time: ''
 			});
 			break;
-		case '>22;':
+		case '>12;':
 			$('.gritter-item-wrapper').remove();
 			$.gritter.add({
 				title: 'Long press left',
@@ -70,7 +70,7 @@ JS::append("$.extend($.gritter.options, { fade_in_speed: 0 }); if (ws) ws.onmess
 				time: ''
 			});
 			break;
-		case '>12;':
+		case '>22;':
 			$('.gritter-item-wrapper').remove();
 			$.gritter.add({
 				title: 'Long press right',

@@ -205,5 +205,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 		case "ssh":
 			shell_exec('/etc/init.d/dropbear start');
 			break;
+
+		case "platform":
+			$_SESSION['platform'] = $_POST['d'];
+			break;
 	}
 } ?>

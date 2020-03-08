@@ -1,19 +1,19 @@
 <?php require('pressurebased.php');
 define('DEV_SENSOR', [
-	"Left" => 2,
+	"Left" => 1,
 	"Center" => 3,
-	"Right" => 1 ]);
+	"Right" => 2 ]);
 
 define('DEV_IMPULSE', [
 	"Soft Tap" => 0,
 	"Hard Tap" => 1,
-	"Press-and-Hold" => 2 ]);
+	"Long Press" => 2 ]);
 
-define('DEV_IMAGE', 'devices/aid1.png');
+define('DEV_IMAGE', 'devices/aid3.png');
 
 define('DEV_CSS', '
-	.dot1 { left: 90% }
-	.dot2 { left: 10% }
+	.dot1 { left: 10% }
+	.dot2 { left: 90% }
 	.dot3 { left: 50% }
 ');
 

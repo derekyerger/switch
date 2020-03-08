@@ -110,6 +110,7 @@ $(document).ready(function() {
 		$('.navbar-collapse').collapse('hide');
 	});
 	programming = decodeProg()['programming'];
+	populateVis();
 	var port = '7001';
 	if (/altdevs.net/.test(window.location.hostname)) port = '7101';
 	setupPing(port);
@@ -238,6 +239,10 @@ function ping(a) {
 			/* Remove after 3s */
 			pingHandle = setTimeout(unping, 3000);
 		}
+
+		/* Activate map item */
+		$(".va").attr("style", "background-color:#000");
+		$("#va-" + a[0] + a[1]).parent().children(".widget-card-cover").attr("style", "background-color:#007;outline-color:#fff;outline-style:auto")
 		
 		/* Update list of commands */
 		lastCmds.push(a);
@@ -329,6 +334,22 @@ function ping(a) {
 
 }
 
+function getButtonCmd(cmdString) {
+	actionStack = [];
+	var m = seekAction(actionMap, cmdString.substr(2));
+	var s = '';
+	if (m || cmdString.substr(2) !== ";") {
+		//s = "<p>" + locMapImg[ cmdString[0] + cmdString[1] ] + " " + (m ? m : friendlyKeys(cmdString.substr(2, -1)) ) + "</p>" + s;
+		s = '<div class="btn-group"><p>' + locMapImg[ cmdString[0] + cmdString[1] ] +
+		' &nbsp; ' + (m ? '<button disabled="disabled" class="btn disabled btn-outline-light btn-xs m-r-5 m-b-5">' + m + '</button>' : friendlyKeys(cmdString.substr(2))) + 
+		'<button onclick="javascript:proxyAssign(\'' + cmdString[0] + cmdString[1] + '\');" class="btn btn-primary btn-xs m-r-5 m-b-5 assignable">Reassign</button></p></div><br/>' + s;
+	} else {
+		s = '<div class="btn-group"><p>' + locMapImg[ cmdString[0] + cmdString[1] ] +
+		' &nbsp; <button class="btn disabled btn-outline-secondary btn-xs m-r-5 m-b-5">Unassigned</button><button onclick="javascript:proxyAssign(\'' + cmdString[0] + cmdString[1] + '\');" class="btn btn-primary btn-xs m-r-5 m-b-5 assignable">Assign to action</button></p></div><br/>' + s;
+	}
+	return s;
+}
+
 function populateLastCmds() {
 	if (!$(".responsive-device-txt").length) return;
 
@@ -342,19 +363,7 @@ function populateLastCmds() {
 	for (var c in lastCmds) {
 		if (lastCmds[c].substr(0, 1) == '*') {
 			s = '<p><button class="btn disabled btn-yellow btn-xs m-r-5 m-b-5">New program: ' + lastCmds[c].substr(1, 1) + '</button></p>' + s;
-		} else {
-			actionStack = [];
-			var m = seekAction(actionMap, lastCmds[c].substr(2));
-			if (m || lastCmds[c].substr(2) !== ";") {
-				//s = "<p>" + locMapImg[ lastCmds[c][0] + lastCmds[c][1] ] + " " + (m ? m : friendlyKeys(lastCmds[c].substr(2, -1)) ) + "</p>" + s;
-				s = '<div class="btn-group"><p>' + locMapImg[ lastCmds[c][0] + lastCmds[c][1] ] +
-				' &nbsp; ' + (m ? '<button disabled="disabled" class="btn disabled btn-outline-light btn-xs m-r-5 m-b-5">' + m + '</button>' : friendlyKeys(lastCmds[c].substr(2))) + 
-				'<button onclick="javascript:proxyAssign(\'' + lastCmds[c][0] + lastCmds[c][1] + '\');" class="btn btn-primary btn-xs m-r-5 m-b-5 assignable">Reassign</button></p></div><br/>' + s;
-			} else {
-				s = '<div class="btn-group"><p>' + locMapImg[ lastCmds[c][0] + lastCmds[c][1] ] +
-				' &nbsp; <button class="btn disabled btn-outline-secondary btn-xs m-r-5 m-b-5">Unassigned</button><button onclick="javascript:proxyAssign(\'' + lastCmds[c][0] + lastCmds[c][1] + '\');" class="btn btn-primary btn-xs m-r-5 m-b-5 assignable">Assign to action</button></p></div><br/>' + s;
-			}
-		}
+		} else s = getButtonCmd(lastCmds[c]);
 	}
 	$(".responsive-device-txt").html('<p><button onclick="javascript:retr(\'get\');" class="btn btn-primary btn-s m-r-5 m-b-5 assignable">Assign next input</button></p>' + s);
 
@@ -363,6 +372,13 @@ function populateLastCmds() {
 	if (lp !== null) {
 		if (lp === 0 || lp == lastCmds.length) $("div.panel-heading > h4:contains('Command history')").closest("div.panel").find('button.btn-primary').eq(0).focus();
 		else $("#ddPlatform").focus();
+	}
+}
+
+function populateVis() {
+	var p = programming.split(';');
+	for (var i in p) {
+		$("#va-" + p[i].substr(0,2)).html(getButtonCmd(p[i]));
 	}
 }
 
@@ -467,6 +483,7 @@ function popClicks() {
 function activateElt(p) {
 	switch (p) {
 		case "visual":
+			populateVis();
 			populateLastCmds();
 			break;
 
@@ -545,6 +562,7 @@ function ddSet(id, txt) {
 	switch (id) {
 		case "ddPlatform":
 			actionMap = $.extend({}, platformMap['*'], platformMap[txt]);
+			retr("platform", txt);
 			break;
 
 		case "ddProfile":

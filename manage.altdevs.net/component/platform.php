@@ -13,4 +13,5 @@ ob_start(); ?>
 </div>
 <p>Selecting a specific operating system or platform customizes the available inputs.</p>
 <?php $content = ob_get_clean();
-require('elements/panel.php'); ?>
+require('elements/panel.php');
+if ($_SESSION['platform']) Js::append("ddSet('ddPlatform', '" . $_SESSION['platform'] . "');populateVis();"); ?>
