@@ -149,7 +149,7 @@ void setup() {
     EEPROM.update(adx, MAGIC >> 8); EEPROM.update(adx+1, MAGIC);
     saveValues();
     ble.factoryReset();
-    ble.sendCommandCheckOK("AT+GAPDEVNAME=Vectis-MIDI 2");
+    ble.sendCommandCheckOK("AT+GAPDEVNAME=midipad 9");
     ble.sendCommandCheckOK("AT+HWMODELED=DISABLE");
   } else {
     int sp;
@@ -368,7 +368,7 @@ void loop() {
 
 void printMenu() {
   Serial.println("\033[2J\033[0;0H");
-  Serial.println(" \033[32;1mVectis for musicians\033[34m\r\n Alternate Devices - https://vect.is\033[0m\r\n");
+  Serial.println(" \033[32;1mmidipad\033[34m\r\n Alternate Devices - https://altdevs.net\033[0m\r\n");
   Serial.println(" \033[1m1.\033[0m Save values and show sensors\r\n");
   Serial.println(" \033[1mTunable items:\033[0m"); 
   int ch = MENUFIXED;

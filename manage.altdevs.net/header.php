@@ -50,6 +50,13 @@
 		}
 		.panel.panel-expand { z-index: 1040 }
 		.btn-outline-light.disabled { color: #fff; opacity: 1 }
+		#activitiesDlg .widget-card-cover {
+			background: #333;
+		}
+		a.selected div.widget-card-cover {
+			/*background-color: #fff;*/
+			outline: white thick solid !important;
+		}
 
 	</style>
 </head>

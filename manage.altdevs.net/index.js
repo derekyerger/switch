@@ -92,17 +92,13 @@ function setPart(newKeys) {
 
 function template(pstring) {
 	programming = pstring;
+	ajaxRetFn = "retr('page', 'home');";
 	retr("save", programming);
-	swal({
-		title: "Template applied",
-		text: "The selected template has been applied to the device.",
-		type: "success",
-		showCancelButton: true,
-		cancelButtonClass: "btn-lime",
-		cancelButtonText: "Customize"},
-	function(x) {
-		if (!x) retr("page", "Home");
-	});
+}
+
+function tile(tn) {
+	if ($("#tile" + tn).hasClass("selected")) $("#tile" + tn).removeClass("selected");
+	else $("#tile" + tn).addClass("selected");
 }
 
 $(document).ready(function() {
@@ -485,6 +481,24 @@ function activateElt(p) {
 		case "visual":
 			populateVis();
 			populateLastCmds();
+			$("#btPair").on("shown.bs.modal", function() {
+				clearTimeout(spinHandle);
+				spinHandle = setTimeout(spinnerStart, 150); /* Only start spinner if we're taking too long */
+				$.post("/tweak.php", {pk: encodeId('bluetooth'), value: 1})
+					.done(function(rxObj) {
+						clearTimeout(spinHandle);
+						spinnerEnd();
+				});
+			});
+			$("#btPair").on("hidden.bs.modal", function() {
+				clearTimeout(spinHandle);
+				spinHandle = setTimeout(spinnerStart, 150); /* Only start spinner if we're taking too long */
+				$.post("/tweak.php", {pk: encodeId('bluetooth'), value: 0})
+					.done(function(rxObj) {
+						clearTimeout(spinHandle);
+						spinnerEnd();
+				});
+			});
 			break;
 
 		case "assignment":
@@ -563,6 +577,7 @@ function ddSet(id, txt) {
 		case "ddPlatform":
 			actionMap = $.extend({}, platformMap['*'], platformMap[txt]);
 			retr("platform", txt);
+			populateVis();
 			break;
 
 		case "ddProfile":
