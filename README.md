@@ -1,3 +1,2 @@
-# altdevs
-
-The entire altdevs.net and hardware codebase
+# switch
+Pressure-based accessibility interface for interacting with technology
