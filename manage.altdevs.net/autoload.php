@@ -1,5 +1,5 @@
 <?php /* temporary hack to decide what platform to use */
-
+error_reporting(E_ERROR | E_PARSE);
 require_once("comms/comms.php");
 
 if (file_exists('/www/hciconf')) {

@@ -4,7 +4,7 @@ session_start();
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
-	$_SESSION['prog'] = http_build_query(fetchProgramming($comm), null, "&", PHP_QUERY_RFC3986);
+	$_SESSION['prog'] = http_build_query(fetchProgramming($comm), "", "&", PHP_QUERY_RFC3986);
 	
 	/* TODO: per-device cache programming */
 	JS::append("deviceData = '" . $_SESSION['prog'] . "';");
